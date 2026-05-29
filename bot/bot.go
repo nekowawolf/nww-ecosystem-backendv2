@@ -33,40 +33,32 @@ func InitBot() {
 	}
 	TelegramBot = b
 
+	menu := &tele.ReplyMarkup{}
+	btnBackup := menu.Data("📦 backup", "btn_backup")
+	btnStatus := menu.Data("📊 status", "btn_status")
+
+	menu.Inline(
+		menu.Row(btnBackup, btnStatus),
+	)
+
+	b.Handle("/start", func(c tele.Context) error {
+		msg := "🤖 Hi, I’m NwwOne\n\nThe central management system of the Nww Ecosystem.\n\nI'm here to assist with infrastructure monitoring, backups, project management, and automated operations across all connected services\n\nSelect an action below."
+		return c.Send(msg, menu)
+	})
+
+	b.Handle(&btnBackup, func(c tele.Context) error {
+		c.Respond()
+		return handleBackup(c)
+	})
+
+	b.Handle(&btnStatus, func(c tele.Context) error {
+		c.Respond()
+		return handleStatus(c)
+	})
+
 	// Commands
-	b.Handle("/backup", func(c tele.Context) error {
-		err := c.Send("⏳  Starting backup...")
-		if err != nil {
-			return err
-		}
-
-		buf, filename, err := PerformBackup()
-		if err != nil {
-			return c.Send(fmt.Sprintf("❌ Backup failed: %v", err))
-		}
-
-		doc := &tele.Document{
-			File:     tele.FromReader(bytes.NewReader(buf.Bytes())),
-			FileName: filename,
-		}
-
-		return c.Send(doc)
-	})
-
-	b.Handle("/status", func(c tele.Context) error {
-		mongoStatus := "🔴 MongoDB offline"
-		if config.Database != nil {
-			mongoStatus = "🟢 MongoDB online"
-		}
-
-		lastBackup := GetLastBackupDate()
-		nextBackup := GetNextBackupTime()
-
-		statusMsg := fmt.Sprintf("%s\n🟢 Heroku healthy\n📅 Next backup: %s\n✅ Last backup: %s",
-			mongoStatus, nextBackup, lastBackup)
-
-		return c.Send(statusMsg)
-	})
+	b.Handle("/backup", handleBackup)
+	b.Handle("/status", handleStatus)
 
 	go b.Start()
 	log.Println("Telegram bot is running")
@@ -110,4 +102,38 @@ func SendBackupArchive() {
 	} else {
 		log.Println("Automated backup sent successfully")
 	}
+}
+
+func handleBackup(c tele.Context) error {
+	err := c.Send("⏳  Starting backup...")
+	if err != nil {
+		return err
+	}
+
+	buf, filename, err := PerformBackup()
+	if err != nil {
+		return c.Send(fmt.Sprintf("❌ Backup failed: %v", err))
+	}
+
+	doc := &tele.Document{
+		File:     tele.FromReader(bytes.NewReader(buf.Bytes())),
+		FileName: filename,
+	}
+
+	return c.Send(doc)
+}
+
+func handleStatus(c tele.Context) error {
+	mongoStatus := "🔴 MongoDB offline"
+	if config.Database != nil {
+		mongoStatus = "🟢 MongoDB online"
+	}
+
+	lastBackup := GetLastBackupDate()
+	nextBackup := GetNextBackupTime()
+
+	statusMsg := fmt.Sprintf("%s\n🟢 Heroku healthy\n📅 Next backup: %s\n✅ Last backup: %s",
+		mongoStatus, nextBackup, lastBackup)
+
+	return c.Send(statusMsg)
 }
