@@ -7,7 +7,7 @@ import (
 )
 
 func SetupRoutes(app *fiber.App) {
-	api := app.Group("/airdrop")
+	api := app.Group("/nww")
 
 	// Auth routes
 	api.Post("/login", controllers.LoginAdminHandler)

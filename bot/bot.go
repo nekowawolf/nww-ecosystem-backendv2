@@ -3,137 +3,87 @@ package bot
 import (
 	"bytes"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
-	"time"
-
-	"github.com/nekowawolf/airdropv2/config"
-	tele "gopkg.in/telebot.v3"
+	"os/exec"
+	"strings"
 )
 
-var TelegramBot *tele.Bot
-
-func InitBot() {
-	token := os.Getenv("TELEGRAM_BOT_TOKEN")
-	if token == "" {
-		log.Println("TELEGRAM_BOT_TOKEN is not set. Bot will not start.")
-		return
-	}
-
-	pref := tele.Settings{
-		Token:  token,
-		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
-	}
-
-	b, err := tele.NewBot(pref)
+// Helper to run bash commands
+func runBash(command string) string {
+	cmd := exec.Command("sh", "-c", command)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
 	if err != nil {
-		log.Fatalf("failed to start bot: %v", err)
-		return
+		return "Error retrieving data"
 	}
-	TelegramBot = b
-
-	menu := &tele.ReplyMarkup{}
-	btnBackup := menu.Data("📦 backup", "btn_backup")
-	btnStatus := menu.Data("📊 status", "btn_status")
-
-	menu.Inline(
-		menu.Row(btnBackup, btnStatus),
-	)
-
-	b.Handle("/start", func(c tele.Context) error {
-		msg := "🤖 Hi, I’m NwwOne\n\nThe central management system of the Nww Ecosystem.\n\nI'm here to assist with infrastructure monitoring, backups, project management, and automated operations across all connected services\n\nSelect an action below."
-		return c.Send(msg, menu)
-	})
-
-	b.Handle(&btnBackup, func(c tele.Context) error {
-		c.Respond()
-		return handleBackup(c)
-	})
-
-	b.Handle(&btnStatus, func(c tele.Context) error {
-		c.Respond()
-		return handleStatus(c)
-	})
-
-	// Commands
-	b.Handle("/backup", handleBackup)
-	b.Handle("/status", handleStatus)
-
-	go b.Start()
-	log.Println("Telegram bot is running")
+	return strings.TrimSpace(out.String())
 }
 
-func SendBackupArchive() {
-	if TelegramBot == nil {
-		log.Println("Telegram bot not initialized")
-		return
-	}
-
-	chatIDStr := os.Getenv("TELEGRAM_CHAT_ID")
-	if chatIDStr == "" {
-		log.Println("TELEGRAM_CHAT_ID is not set")
-		return
-	}
-
-	chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
-	if err != nil {
-		log.Printf("Invalid TELEGRAM_CHAT_ID: %v\n", err)
-		return
-	}
-
-	chat := &tele.Chat{ID: chatID}
-
-	buf, filename, err := PerformBackup()
-	if err != nil {
-		log.Printf("Automated backup failed: %v\n", err)
-		TelegramBot.Send(chat, fmt.Sprintf("❌ Automated backup failed: %v", err))
-		return
-	}
-
-	doc := &tele.Document{
-		File:     tele.FromReader(bytes.NewReader(buf.Bytes())),
-		FileName: filename,
-	}
-
-	_, err = TelegramBot.Send(chat, doc)
-	if err != nil {
-		log.Printf("Failed to send automated backup to chat: %v\n", err)
-	} else {
-		log.Println("Automated backup sent successfully")
-	}
+func getUptime() string {
+	return runBash(`uptime -p | sed 's/up //g'`)
 }
 
-func handleBackup(c tele.Context) error {
-	err := c.Send("⏳  Starting backup...")
-	if err != nil {
-		return err
-	}
-
-	buf, filename, err := PerformBackup()
-	if err != nil {
-		return c.Send(fmt.Sprintf("❌ Backup failed: %v", err))
-	}
-
-	doc := &tele.Document{
-		File:     tele.FromReader(bytes.NewReader(buf.Bytes())),
-		FileName: filename,
-	}
-
-	return c.Send(doc)
+func GetRAMUsage() string {
+	info := runBash(`free -m | awk 'NR==2{printf "Total: %.1f GB\nUsed: %.1f GB\nFree: %.1f GB\nUsage: %.0f%%", $2/1024, $3/1024, $4/1024, $3*100/$2}'`)
+	return "💾 Memory Usage\n\n" + info
 }
 
-func handleStatus(c tele.Context) error {
-	mongoStatus := "🔴 MongoDB offline"
-	if config.Database != nil {
-		mongoStatus = "🟢 MongoDB online"
+func GetCPUStatus() string {
+	cores := runBash(`nproc`)
+	usage := runBash(`top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1"%"}'`)
+	load := runBash(`cat /proc/loadavg | awk '{print "1m: "$1"\n5m: "$2"\n15m: "$3}'`)
+	
+	return fmt.Sprintf("⚡ CPU Status\n\nCores: %s vCPU\nCurrent Usage: %s\nLoad Average:\n%s", cores, usage, load)
+}
+
+func GetDiskUsage() string {
+	info := runBash(`df -BG / | awk 'NR==2{printf "Total: %sB\nUsed: %sB\nFree: %sB\nUsage: %s", $2, $3, $4, $5}'`)
+	return "💿 Disk Usage\n\n" + info
+}
+
+func GetDockerContainers() string {
+	containers := runBash(`docker ps --format "🟢 {{.Names}}"`)
+	if containers == "" {
+		containers = "No running containers"
 	}
+	running := runBash(`docker ps -q | wc -l`)
+	stopped := runBash(`docker ps -aq | wc -l | awk -v r="` + running + `" '{print $1-r}'`)
 
-	lastBackup := GetLastBackupDate()
-	nextBackup := GetNextBackupTime()
+	return fmt.Sprintf("🐳 Docker Containers\n\n%s\n\nRunning: %s\nStopped: %s", containers, running, stopped)
+}
 
-	statusMsg := fmt.Sprintf("%s\n🟢 Heroku healthy\n📅 Next backup: %s\n✅ Last backup: %s",
-		mongoStatus, nextBackup, lastBackup)
+func GetNetworkStats() string {
+	publicIP := runBash(`curl -s ifconfig.me || echo "Unknown"`)
+	rxTx := runBash(`ip -s link show $(ip route | awk '/default/ {print $5}' | head -n1) | awk 'NR==4 {rx=$1} NR==6 {tx=$1} END {printf "RX: %.1f GB\nTX: %.1f GB", rx/1024/1024/1024, tx/1024/1024/1024}'`)
+	
+	return fmt.Sprintf("🌐 Network\n\nPublic IP: %s\n%s", publicIP, rxTx)
+}
 
-	return c.Send(statusMsg)
+func GetFullInfo() string {
+	hostname := runBash(`hostname`)
+	osRelease := runBash(`grep PRETTY_NAME /etc/os-release | cut -d'"' -f2`)
+	cores := runBash(`nproc`)
+	
+	// Format: RAM: 1.8 / 4 GB (45%)
+	ram := runBash(`free -m | awk 'NR==2{printf "%.1f / %.1f GB (%.0f%%)", $3/1024, $2/1024, $3*100/$2}'`)
+	
+	// Format: Disk: 25 / 80 GB (31%)
+	disk := runBash(`df -BG / | awk 'NR==2{printf "%sB / %sB (%s)", $3, $2, $5}'`)
+	
+	dockerRunning := runBash(`docker ps -q | wc -l`)
+	uptime := getUptime()
+	load := runBash(`cat /proc/loadavg | awk '{print $1" / "$2" / "$3}'`)
+	
+	return fmt.Sprintf(`🖥️ VPS Information
+
+	Hostname: %s
+	OS: %s
+	CPU: %s vCPU
+	RAM: %s
+	Disk: %s
+	Docker: %s Running
+	MongoDB: 🟢 Connected
+	API: 🟢 Healthy
+	Uptime: %s
+	Load: %s`, hostname, osRelease, cores, ram, disk, dockerRunning, uptime, load)
 }
