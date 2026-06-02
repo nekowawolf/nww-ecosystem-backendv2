@@ -2,15 +2,17 @@ package bot
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
-	"encoding/base64"
 
 	tele "gopkg.in/telebot.v3"
 )
@@ -212,12 +214,12 @@ func handlePhotoUpload(c tele.Context) error {
 		uploadDir = "images"
 	}
 
-	// Generate filename based on timestamp
-	filename := fmt.Sprintf("upload_%d.jpg", time.Now().Unix())
-	path := fmt.Sprintf("%s/%s", uploadDir, filename)
+	now := time.Now()
+	folderPath := fmt.Sprintf("%s/%d", uploadDir, now.Year())
+	filename := fmt.Sprintf("%d_upload.jpg", now.Unix())
+	path := fmt.Sprintf("%s/%s", folderPath, filename)
 	
-	// Create GitHub API request
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/%s", repoOwner, repoName, path)
+	urlStr := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/%s", repoOwner, repoName, path)
 	
 	payload := map[string]interface{}{
 		"message": "Upload via Nww Telegram Bot",
@@ -225,7 +227,7 @@ func handlePhotoUpload(c tele.Context) error {
 	}
 	payloadBytes, _ := json.Marshal(payload)
 
-	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequest("PUT", urlStr, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		return c.Send(fmt.Sprintf("❌ Request creation failed: %v", err))
 	}
@@ -244,19 +246,27 @@ func handlePhotoUpload(c tele.Context) error {
 		var result map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&result)
 		
-		var rawURL string
+		var returnedPath = path
 		if content, ok := result["content"].(map[string]interface{}); ok {
-			if downloadURL, exists := content["download_url"].(string); exists {
-				rawURL = downloadURL
+			if pathVal, exists := content["path"].(string); exists {
+				returnedPath = pathVal
 			}
 		}
 
-		if rawURL == "" {
-			// Fallback to default raw GitHub content URL format
-			rawURL = fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/main/%s", repoOwner, repoName, path)
+		parts := strings.Split(returnedPath, "/")
+		for i, p := range parts {
+			parts[i] = url.PathEscape(p)
 		}
+		escapedPath := strings.Join(parts, "/")
 
-		return c.Send(fmt.Sprintf("✅ Upload Successful!\n\nURL: %s", rawURL))
+		finalURL := fmt.Sprintf(
+			"https://%s.github.io/%s/%s",
+			repoOwner,
+			repoName,
+			escapedPath,
+		)
+
+		return c.Send(fmt.Sprintf("✅ Upload Successful!\n\nURL: %s", finalURL))
 	}
 
 	body, _ := io.ReadAll(resp.Body)
