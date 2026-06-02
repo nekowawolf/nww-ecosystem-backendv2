@@ -37,10 +37,11 @@ func InitBot() {
 	btnBackup := menu.Data("📦 Backup", "btn_backup")
 	btnStatus := menu.Data("📊 Status", "btn_status")
 	btnServer := menu.Data("🖥️ Server", "btn_server")
+	btnTools := menu.Data("⚙️ Tools", "btn_tools")
 
 	menu.Inline(
 		menu.Row(btnBackup, btnStatus),
-		menu.Row(btnServer),
+		menu.Row(btnServer, btnTools),
 	)
 
 	serverMenu := &tele.ReplyMarkup{}
@@ -57,6 +58,19 @@ func InitBot() {
 		serverMenu.Row(btnDocker, btnNetwork),
 		serverMenu.Row(btnFullInfo),
 		serverMenu.Row(btnBack),
+	)
+
+	toolsMenu := &tele.ReplyMarkup{}
+	btnSpeedTest := toolsMenu.Data("⚡ Test Speed API", "btn_speed_test")
+	btnCDN := toolsMenu.Data("🖼️ CDN GitHub", "btn_cdn_github")
+	btnMissingImages := toolsMenu.Data("🔍 Check Missing Images", "btn_missing_images")
+	btnToolsBack := toolsMenu.Data("🔙 Back", "btn_tools_back")
+
+	toolsMenu.Inline(
+		toolsMenu.Row(btnSpeedTest),
+		toolsMenu.Row(btnCDN),
+		toolsMenu.Row(btnMissingImages),
+		toolsMenu.Row(btnToolsBack),
 	)
 
 	b.Handle("/start", func(c tele.Context) error {
@@ -77,6 +91,11 @@ func InitBot() {
 	b.Handle(&btnServer, func(c tele.Context) error {
 		c.Respond()
 		return c.Edit("🖥️ Server Management\n\nSelect a metric to view:", serverMenu)
+	})
+
+	b.Handle(&btnTools, func(c tele.Context) error {
+		c.Respond()
+		return c.Edit("⚙️ Tools & Administration\n\nPlease select an action below:", toolsMenu)
 	})
 
 	b.Handle(&btnRAM, func(c tele.Context) error {
@@ -114,6 +133,20 @@ func InitBot() {
 		msg := "🤖 Hi, I’m NwwOne\n\nThe central management system of the Nww Ecosystem.\n\nI'm here to assist with infrastructure monitoring, backups, project management, and automated operations across all connected services\n\nSelect an action below."
 		return c.Edit(msg, menu)
 	})
+
+	b.Handle(&btnToolsBack, func(c tele.Context) error {
+		c.Respond()
+		msg := "🤖 Hi, I’m NwwOne\n\nThe central management system of the Nww Ecosystem.\n\nI'm here to assist with infrastructure monitoring, backups, project management, and automated operations across all connected services\n\nSelect an action below."
+		return c.Edit(msg, menu)
+	})
+
+	// Tools handlers
+	b.Handle(&btnSpeedTest, handleSpeedTest)
+	b.Handle(&btnCDN, handleCDNInit)
+	b.Handle(&btnMissingImages, handleCheckMissingImages)
+
+	// Catch photos for CDN upload
+	b.Handle(tele.OnPhoto, handlePhotoUpload)
 
 	// Commands
 	b.Handle("/backup", handleBackup)

@@ -22,14 +22,10 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/paidairdrop", controllers.GetAirdropPaidHandler)
 	api.Get("/allairdrop", controllers.GetAllAirdropHandler)
 	api.Get("/allairdrop/stats", controllers.GetAllAirdropStatsHandler)
-	api.Get("/allairdrop/search/:name", controllers.GetAllAirdropByNameHandler)
-	api.Get("/freeairdrop/search/:name", controllers.GetAirdropFreeByNameHandler)
-	api.Get("/paidairdrop/search/:name", controllers.GetAirdropPaidByNameHandler)
 
 	// Public crypto community routes
 	api.Get("/cryptocommunity", controllers.GetAllCryptoCommunity)
 	api.Get("/cryptocommunity/stats", controllers.GetCryptoCommunityStats)
-	api.Get("/cryptocommunity/search/:name", controllers.GetCryptoCommunityByName)
 
 	// Public price routes	
 	api.Get("/price", controllers.PriceHandler)

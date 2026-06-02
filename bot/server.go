@@ -24,7 +24,7 @@ func getUptime() string {
 }
 
 func GetRAMUsage() string {
-	info := runBash(`free -m | awk 'NR==2{printf "Total: %.1f GB\nUsed: %.1f GB\nFree: %.1f GB\nUsage: %.0f%%", $2/1024, $3/1024, $4/1024, $3*100/$2}'`)
+	info := runBash(`free -m | awk 'NR==2{printf "Total: %.1f GB\nUsed: %.1f GB\nAvailable: %.1f GB\nUsage: %.0f%%", $2/1024, $3/1024, $7/1024, $3*100/$2}'`)
 	return "💾 Memory Usage\n\n" + info
 }
 
@@ -64,10 +64,8 @@ func GetFullInfo() string {
 	osRelease := runBash(`grep PRETTY_NAME /etc/host-os-release | cut -d'"' -f2 || grep PRETTY_NAME /etc/os-release | cut -d'"' -f2`)
 	cores := runBash(`nproc`)
 	
-	// Format: RAM: 1.8 / 4 GB (45%)
-	ram := runBash(`free -m | awk 'NR==2{printf "%.1f / %.1f GB (%.0f%%)", $3/1024, $2/1024, $3*100/$2}'`)
+	ram := runBash(`free -m | awk 'NR==2{printf "%.1f / %.1f GB (%.0f%%)", ($2-$7)/1024, $2/1024, ($2-$7)*100/$2}'`)
 	
-	// Format: Disk: 25 / 80 GB (31%)
 	disk := runBash(`df -BG / | awk 'NR==2{printf "%sB / %sB (%s)", $3, $2, $5}'`)
 	
 	dockerRunning := runBash(`docker ps -q | wc -l`)
