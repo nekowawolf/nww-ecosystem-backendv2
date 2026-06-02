@@ -2,6 +2,7 @@ package bot
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nekowawolf/airdropv2/config"
+	"github.com/nekowawolf/airdropv2/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	tele "gopkg.in/telebot.v3"
 )
@@ -42,10 +47,10 @@ func handleSpeedTest(c tele.Context) error {
 		return c.Send("❌ Unauthorized access.")
 	}
 
-	c.Edit("⏳ Testing API speed...")
+	c.Send("⏳ Testing API speed...")
 	baseURL, err := getBaseURL()
 	if err != nil {
-		return c.Edit(fmt.Sprintf("❌ Configuration Error: %v", err))
+		return c.Send(fmt.Sprintf("❌ Configuration Error: %v", err))
 	}
 	endpoints := []string{"/allairdrop", "/profilelink"}
 
@@ -78,7 +83,7 @@ func handleSpeedTest(c tele.Context) error {
 		results += "Some endpoints experienced issues."
 	}
 
-	return c.Edit(results)
+	return c.Send(results)
 }
 
 func handleCheckMissingImages(c tele.Context) error {
@@ -87,11 +92,11 @@ func handleCheckMissingImages(c tele.Context) error {
 		return c.Send("❌ Unauthorized access.")
 	}
 
-	c.Edit("🔍 Checking for missing images. This might take a while...")
+	c.Send("🔍 Checking for missing images. This might take a while...")
 
 	baseURL, err := getBaseURL()
 	if err != nil {
-		return c.Edit(fmt.Sprintf("❌ Configuration Error: %v", err))
+		return c.Send(fmt.Sprintf("❌ Configuration Error: %v", err))
 	}
 
 	endpoints := map[string]string{
@@ -112,9 +117,11 @@ func handleCheckMissingImages(c tele.Context) error {
 
 		var data struct {
 			Data []struct {
-				Name  string `json:"name"`
-				Image string `json:"image"`
-				Logo  string `json:"logo"` // Sometimes it's called logo
+				Name     string `json:"name"`
+				Image    string `json:"image"`
+				Logo     string `json:"logo"`
+				ImageURL string `json:"image_url"`
+				ImgURL   string `json:"img_url"`
 			} `json:"data"`
 		}
 
@@ -129,11 +136,25 @@ func handleCheckMissingImages(c tele.Context) error {
 				imgURL = item.Logo
 			}
 			if imgURL == "" {
+				imgURL = item.ImageURL
+			}
+			if imgURL == "" {
+				imgURL = item.ImgURL
+			}
+			if imgURL == "" {
 				continue
 			}
 
 			// Ping the image URL
-			imgResp, err := http.Get(imgURL)
+			req, err := http.NewRequest("GET", imgURL, nil)
+			if err != nil {
+				continue
+			}
+			req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+			
+			client := &http.Client{Timeout: 10 * time.Second}
+			imgResp, err := client.Do(req)
+
 			if err != nil || imgResp.StatusCode != 200 {
 				totalMissing++
 				details += fmt.Sprintf("- [%s] Name: \"%s\"\n", label, item.Name)
@@ -153,7 +174,7 @@ func handleCheckMissingImages(c tele.Context) error {
 		msg += "\nDetails: All images are safe!"
 	}
 
-	return c.Edit(msg)
+	return c.Send(msg)
 }
 
 func handleCDNInit(c tele.Context) error {
@@ -163,7 +184,7 @@ func handleCDNInit(c tele.Context) error {
 	}
 
 	userUploadState[c.Chat().ID] = true
-	return c.Edit("🖼️ GitHub CDN Upload\n\nPlease send me the photo you want to upload. (It will be uploaded to your configured GitHub repo).")
+	return c.Send("🖼️ GitHub CDN Upload\n\nPlease send me the photo you want to upload. (It will be uploaded to your configured GitHub repo).")
 }
 
 func handlePhotoUpload(c tele.Context) error {
@@ -247,9 +268,13 @@ func handlePhotoUpload(c tele.Context) error {
 		json.NewDecoder(resp.Body).Decode(&result)
 		
 		var returnedPath = path
+		var sha = ""
 		if content, ok := result["content"].(map[string]interface{}); ok {
 			if pathVal, exists := content["path"].(string); exists {
 				returnedPath = pathVal
+			}
+			if shaVal, exists := content["sha"].(string); exists {
+				sha = shaVal
 			}
 		}
 
@@ -265,6 +290,20 @@ func handlePhotoUpload(c tele.Context) error {
 			repoName,
 			escapedPath,
 		)
+
+		img := models.Image{
+			ID:       primitive.NewObjectID(),
+			Filename: filename,
+			URL:      finalURL,
+			Size:     int64(len(buf)),
+			Sha:      sha,
+			Path:     returnedPath,
+		}
+
+		_, err := config.Database.Collection("images").InsertOne(context.Background(), img)
+		if err != nil {
+			return c.Send(fmt.Sprintf("❌ Upload successful to GitHub, but failed to save to database: %v", err))
+		}
 
 		return c.Send(fmt.Sprintf("✅ Upload Successful!\n\nURL: %s", finalURL))
 	}
