@@ -9,8 +9,10 @@ import (
 var origins = []string{
     "https://nekowawolf.xyz",
     "https://cc.nekowawolf.xyz",
+    "https://ai.nekowawolf.xyz",
     "https://www.nekowawolf.xyz",
     "https://link.nekowawolf.xyz",
+    "https://web3.nekowawolf.xyz",
     "https://admin.nekowawolf.xyz",
     "https://nekowawolf.github.io",
     "https://airdrop.nekowawolf.xyz",
