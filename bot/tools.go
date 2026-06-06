@@ -52,7 +52,7 @@ func handleSpeedTest(c tele.Context) error {
 	if err != nil {
 		return c.Send(fmt.Sprintf("❌ Configuration Error: %v", err))
 	}
-	endpoints := []string{"/allairdrop", "/profilelink"}
+	endpoints := []string{"/allairdrop", "/profilelink", "/postslink", "/cryptocommunity", "/price", "/portfolio"}
 
 	results := "⚡ API Speed Test Results\n\n"
 	allNormal := true

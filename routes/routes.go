@@ -34,7 +34,6 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/profilelink", controllers.GetProfile)
 	api.Get("/postslink", controllers.GetAllPosts)
 	api.Get("/postslink/stats", controllers.GetPostStats)
-	api.Get("/postslink/:id", controllers.GetPostByID)
 
 	// ==================== PROTECTED ROUTES ====================
 	protected := api.Group("/", middlewares.AdminMiddleware())
@@ -83,8 +82,9 @@ func SetupRoutes(app *fiber.App) {
 	protected.Delete("/images/:id", controllers.DeleteImage)
 
 	// Protected link routes
-	protected.Put("/profilelink", controllers.UpdateProfile)
+	protected.Get("/postslink/:id", controllers.GetPostByID)
 	protected.Post("/postslink", controllers.CreatePost)
 	protected.Put("/postslink/:id", controllers.UpdatePost)
+	protected.Put("/profilelink", controllers.UpdateProfile)
 	protected.Delete("/postslink/:id", controllers.DeletePost)
 }
