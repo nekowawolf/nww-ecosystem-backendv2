@@ -62,10 +62,13 @@ func GetNetworkStats() string {
 func GetFullInfo() string {
 	hostname := runBash(`hostname`)
 	
-	osName := runBash(`uname -srm`)
+	osName := runBash(`lsb_release -ds 2>/dev/null || grep PRETTY_NAME /etc/os-release | cut -d'"' -f2`)
 	if osName == "" || osName == "Error retrieving data" {
-		osName = "Linux"
+		osName = "Ubuntu 22.04.5 LTS"
 	}
+	osName = strings.Trim(osName, "\"")
+	arch := runBash(`uname -m | awk '{if($1=="x86_64") print "64-bit"; else if($1=="aarch64") print "ARM64"; else print $1}'`)
+	osArchitecture := fmt.Sprintf("%s (%s)", osName, arch)
 	
 	uptime := getUptime()
 	
@@ -101,33 +104,33 @@ func GetFullInfo() string {
 	
 	return fmt.Sprintf(`💻 VPS INFORMATION
 
-	[Overview]
-	Hostname : %s
-	OS : %s
-	Uptime : %s
-	Load : %s
+[Overview]
+Hostname : %s
+OS : %s
+Uptime : %s
+Load : %s
 
-	[CPU]
-	Processor : %s
-	Cores : %s vCPU
+[CPU]
+Processor : %s
+Cores : %s vCPU
 
-	[RAM]
-	Total : %s
-	Used : %s
-	Free : %s
+[RAM]
+Total : %s
+Used : %s
+Free : %s
 
-	[Disk]
-	Type : %s
-	Total : %s
-	Used : %s
-	Free : %s
+[Disk]
+Type : %s
+Total : %s
+Used : %s
+Free : %s
 
-	[Docker]
-	Status : %s Active
+[Docker]
+Status : %s Active
 
-	[Network]
-	Public IP : %s
-	%s`, 
-	hostname, osName, uptime, systemLoad, processor, cores, 
+[Network]
+Public IP : %s
+%s`, 
+	hostname, osArchitecture, uptime, systemLoad, processor, cores, 
 	totalRAM, usedRAM, freeRAM, storageType, totalDisk, usedDisk, availableDisk, dockerRunning, publicIP, rxTx)
 }
