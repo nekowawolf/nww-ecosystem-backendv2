@@ -62,13 +62,7 @@ func GetNetworkStats() string {
 func GetFullInfo() string {
 	hostname := runBash(`hostname`)
 	
-	osName := runBash(`lsb_release -ds 2>/dev/null || grep PRETTY_NAME /etc/os-release | cut -d'"' -f2`)
-	if osName == "" || osName == "Error retrieving data" {
-		osName = "Ubuntu 22.04.5 LTS"
-	}
-	osName = strings.Trim(osName, "\"")
-	arch := runBash(`uname -m | awk '{if($1=="x86_64") print "64-bit"; else if($1=="aarch64") print "ARM64"; else print $1}'`)
-	osArchitecture := fmt.Sprintf("%s (%s)", osName, arch)
+	osArchitecture := "Ubuntu 22.04.5 LTS (64-bit)"
 	
 	uptime := getUptime()
 	
