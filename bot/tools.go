@@ -107,10 +107,10 @@ func handleCheckMissingImages(c tele.Context) error {
 	totalMissing := 0
 	details := ""
 
-	for label, url := range endpoints {
-		resp, err := http.Get(url)
+	for label, endpointUrl := range endpoints {
+		resp, err := http.Get(endpointUrl)
 		if err != nil {
-			log.Printf("Error fetching %s: %v\n", url, err)
+			log.Printf("Error fetching %s: %v\n", endpointUrl, err)
 			continue
 		}
 		defer resp.Body.Close()
@@ -126,7 +126,7 @@ func handleCheckMissingImages(c tele.Context) error {
 		}
 
 		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-			log.Printf("Error decoding JSON from %s: %v\n", url, err)
+			log.Printf("Error decoding JSON from %s: %v\n", endpointUrl, err)
 			continue
 		}
 
@@ -172,6 +172,101 @@ func handleCheckMissingImages(c tele.Context) error {
 		msg += "\nDetails:\n" + details
 	} else {
 		msg += "\nDetails: All images are safe!"
+	}
+
+	return c.Send(msg)
+}
+
+func handleCheckInvalidLink(c tele.Context) error {
+	c.Respond()
+	if !checkAuth(c) {
+		return c.Send("❌ Unauthorized access.")
+	}
+
+	c.Send("🔗 Checking for invalid links. This might take a while...")
+
+	baseURL, err := getBaseURL()
+	if err != nil {
+		return c.Send(fmt.Sprintf("❌ Configuration Error: %v", err))
+	}
+
+	endpoints := map[string]string{
+		"Airdrop":          baseURL + "/allairdrop",
+		"Crypto Community": baseURL + "/cryptocommunity",
+	}
+
+	totalInvalid := 0
+	details := ""
+
+	for label, endpointUrl := range endpoints {
+		resp, err := http.Get(endpointUrl)
+		if err != nil {
+			log.Printf("Error fetching %s: %v\n", endpointUrl, err)
+			continue
+		}
+		defer resp.Body.Close()
+
+		var data struct {
+			Data []struct {
+				Name    string `json:"name"`
+				Link    string `json:"link"`
+				LinkURL string `json:"link_url"`
+			} `json:"data"`
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			log.Printf("Error decoding JSON from %s: %v\n", endpointUrl, err)
+			continue
+		}
+
+		for _, item := range data.Data {
+			link := item.Link
+			if link == "" {
+				link = item.LinkURL
+			}
+			if link == "" {
+				continue
+			}
+
+			// Validate URL format
+			parsedURL, err := url.ParseRequestURI(link)
+			if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
+				totalInvalid++
+				details += fmt.Sprintf("- [%s] Name: \"%s\" (Invalid format: %s)\n", label, item.Name, link)
+				continue
+			}
+
+			// Ping the link
+			req, err := http.NewRequest("GET", link, nil)
+			if err != nil {
+				continue
+			}
+			req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+			
+			client := &http.Client{Timeout: 10 * time.Second}
+			linkResp, err := client.Do(req)
+
+			if err != nil || linkResp.StatusCode >= 400 {
+				totalInvalid++
+				details += fmt.Sprintf("- [%s] Name: \"%s\" (Link: %s)\n", label, item.Name, link)
+			}
+			if linkResp != nil {
+				linkResp.Body.Close()
+			}
+		}
+	}
+
+	msg := "🔗 Invalid Link Check Complete!\n\n"
+	msg += fmt.Sprintf("Total Invalid Links: %d\n", totalInvalid)
+
+	if totalInvalid > 0 {
+		msg += "\nDetails:\n" + details
+	} else {
+		msg += "\nDetails: All links are valid!"
+	}
+
+	if len(msg) > 4000 {
+		msg = msg[:4000] + "\n... (truncated)"
 	}
 
 	return c.Send(msg)

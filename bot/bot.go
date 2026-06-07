@@ -61,16 +61,28 @@ func InitBot() {
 	)
 
 	toolsMenu := &tele.ReplyMarkup{}
-	btnSpeedTest := toolsMenu.Data("⚡ Test Speed API", "btn_speed_test")
-	btnCDN := toolsMenu.Data("🖼️ CDN GitHub", "btn_cdn_github")
-	btnMissingImages := toolsMenu.Data("🔍 Check Missing Images", "btn_missing_images")
+	btnWebTools := toolsMenu.Data("🌐 Web Tools", "btn_web_tools")
+	btnCryptoTools := toolsMenu.Data("🪙 Crypto Tools", "btn_crypto_tools")
 	btnToolsBack := toolsMenu.Data("🔙 Back", "btn_tools_back")
 
 	toolsMenu.Inline(
-		toolsMenu.Row(btnSpeedTest),
-		toolsMenu.Row(btnCDN),
-		toolsMenu.Row(btnMissingImages),
+		toolsMenu.Row(btnWebTools, btnCryptoTools),
 		toolsMenu.Row(btnToolsBack),
+	)
+
+	webToolsMenu := &tele.ReplyMarkup{}
+	btnSpeedTest := webToolsMenu.Data("⚡ Test Speed API", "btn_speed_test")
+	btnCDN := webToolsMenu.Data("🖼️ CDN GitHub", "btn_cdn_github")
+	btnMissingImages := webToolsMenu.Data("🔍 Check Missing Images", "btn_missing_images")
+	btnCheckInvalidLink := webToolsMenu.Data("🔗 Check Invalid Link", "btn_check_invalid_link")
+	btnWebToolsBack := webToolsMenu.Data("🔙 Back", "btn_web_tools_back")
+
+	webToolsMenu.Inline(
+		webToolsMenu.Row(btnSpeedTest),
+		webToolsMenu.Row(btnCDN),
+		webToolsMenu.Row(btnMissingImages),
+		webToolsMenu.Row(btnCheckInvalidLink),
+		webToolsMenu.Row(btnWebToolsBack),
 	)
 
 	b.Handle("/start", func(c tele.Context) error {
@@ -140,10 +152,25 @@ func InitBot() {
 		return c.Edit(msg, menu)
 	})
 
+	b.Handle(&btnWebTools, func(c tele.Context) error {
+		c.Respond()
+		return c.Edit("🌐 Web Tools\n\nPlease select an action below:", webToolsMenu)
+	})
+
+	b.Handle(&btnCryptoTools, func(c tele.Context) error {
+		return c.Respond(&tele.CallbackResponse{Text: "in development", ShowAlert: true})
+	})
+
+	b.Handle(&btnWebToolsBack, func(c tele.Context) error {
+		c.Respond()
+		return c.Edit("⚙️ Tools & Administration\n\nPlease select an action below:", toolsMenu)
+	})
+
 	// Tools handlers
 	b.Handle(&btnSpeedTest, handleSpeedTest)
 	b.Handle(&btnCDN, handleCDNInit)
 	b.Handle(&btnMissingImages, handleCheckMissingImages)
+	b.Handle(&btnCheckInvalidLink, handleCheckInvalidLink)
 
 	// Catch photos for CDN upload
 	b.Handle(tele.OnPhoto, handlePhotoUpload)
