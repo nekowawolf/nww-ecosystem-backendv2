@@ -99,21 +99,23 @@ func handleCheckMissingImages(c tele.Context) error {
 		return c.Send(fmt.Sprintf("❌ Configuration Error: %v", err))
 	}
 
-	endpoints := map[string]string{
-		"Airdrop":          baseURL + "/allairdrop",
-		"Crypto Community": baseURL + "/cryptocommunity",
+	endpoints := []struct {
+		Label string
+		URL   string
+	}{
+		{"Airdrop", baseURL + "/allairdrop"},
+		{"Crypto Community", baseURL + "/cryptocommunity"},
 	}
 
 	totalMissing := 0
-	details := ""
+	var detailsBlocks []string
 
-	for label, endpointUrl := range endpoints {
-		resp, err := http.Get(endpointUrl)
+	for _, ep := range endpoints {
+		resp, err := http.Get(ep.URL)
 		if err != nil {
-			log.Printf("Error fetching %s: %v\n", endpointUrl, err)
+			log.Printf("Error fetching %s: %v\n", ep.URL, err)
 			continue
 		}
-		defer resp.Body.Close()
 
 		var data struct {
 			Data []struct {
@@ -125,11 +127,14 @@ func handleCheckMissingImages(c tele.Context) error {
 			} `json:"data"`
 		}
 
-		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-			log.Printf("Error decoding JSON from %s: %v\n", endpointUrl, err)
+		err = json.NewDecoder(resp.Body).Decode(&data)
+		resp.Body.Close()
+		if err != nil {
+			log.Printf("Error decoding JSON from %s: %v\n", ep.URL, err)
 			continue
 		}
 
+		var blockDetails string
 		for _, item := range data.Data {
 			imgURL := item.Image
 			if imgURL == "" {
@@ -157,21 +162,29 @@ func handleCheckMissingImages(c tele.Context) error {
 
 			if err != nil || imgResp.StatusCode != 200 {
 				totalMissing++
-				details += fmt.Sprintf("- [%s] Name: \"%s\"\n", label, item.Name)
+				blockDetails += fmt.Sprintf("- Name: \"%s\"\n", item.Name)
 			}
 			if imgResp != nil {
 				imgResp.Body.Close()
 			}
+		}
+
+		if blockDetails != "" {
+			detailsBlocks = append(detailsBlocks, fmt.Sprintf("[%s]\n%s", ep.Label, blockDetails))
 		}
 	}
 
 	msg := "🔍 Image Check Complete!\n\n"
 	msg += fmt.Sprintf("Total Broken Images: %d\n", totalMissing)
 
-	if totalMissing > 0 {
-		msg += "\nDetails:\n" + details
+	if len(detailsBlocks) > 0 {
+		msg += "\nDetails:\n" + strings.Join(detailsBlocks, "\n")
 	} else {
 		msg += "\nDetails: All images are safe!"
+	}
+
+	if len(msg) > 4000 {
+		msg = msg[:4000] + "\n... (truncated)"
 	}
 
 	return c.Send(msg)
@@ -190,21 +203,23 @@ func handleCheckInvalidLink(c tele.Context) error {
 		return c.Send(fmt.Sprintf("❌ Configuration Error: %v", err))
 	}
 
-	endpoints := map[string]string{
-		"Airdrop":          baseURL + "/allairdrop",
-		"Crypto Community": baseURL + "/cryptocommunity",
+	endpoints := []struct {
+		Label string
+		URL   string
+	}{
+		{"Airdrop", baseURL + "/allairdrop"},
+		{"Crypto Community", baseURL + "/cryptocommunity"},
 	}
 
 	totalInvalid := 0
-	details := ""
+	var detailsBlocks []string
 
-	for label, endpointUrl := range endpoints {
-		resp, err := http.Get(endpointUrl)
+	for _, ep := range endpoints {
+		resp, err := http.Get(ep.URL)
 		if err != nil {
-			log.Printf("Error fetching %s: %v\n", endpointUrl, err)
+			log.Printf("Error fetching %s: %v\n", ep.URL, err)
 			continue
 		}
-		defer resp.Body.Close()
 
 		var data struct {
 			Data []struct {
@@ -214,11 +229,14 @@ func handleCheckInvalidLink(c tele.Context) error {
 			} `json:"data"`
 		}
 
-		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-			log.Printf("Error decoding JSON from %s: %v\n", endpointUrl, err)
+		err = json.NewDecoder(resp.Body).Decode(&data)
+		resp.Body.Close()
+		if err != nil {
+			log.Printf("Error decoding JSON from %s: %v\n", ep.URL, err)
 			continue
 		}
 
+		var blockDetails string
 		for _, item := range data.Data {
 			link := item.Link
 			if link == "" {
@@ -232,7 +250,7 @@ func handleCheckInvalidLink(c tele.Context) error {
 			parsedURL, err := url.ParseRequestURI(link)
 			if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
 				totalInvalid++
-				details += fmt.Sprintf("- [%s] Name: \"%s\" (Invalid format: %s)\n", label, item.Name, link)
+				blockDetails += fmt.Sprintf("- Name: \"%s\" (Invalid format: %s)\n", item.Name, link)
 				continue
 			}
 
@@ -248,19 +266,23 @@ func handleCheckInvalidLink(c tele.Context) error {
 
 			if err != nil || linkResp.StatusCode >= 400 {
 				totalInvalid++
-				details += fmt.Sprintf("- [%s] Name: \"%s\" (Link: %s)\n", label, item.Name, link)
+				blockDetails += fmt.Sprintf("- Name: \"%s\" (Link: %s)\n", item.Name, link)
 			}
 			if linkResp != nil {
 				linkResp.Body.Close()
 			}
+		}
+
+		if blockDetails != "" {
+			detailsBlocks = append(detailsBlocks, fmt.Sprintf("[%s]\n%s", ep.Label, blockDetails))
 		}
 	}
 
 	msg := "🔗 Invalid Link Check Complete!\n\n"
 	msg += fmt.Sprintf("Total Invalid Links: %d\n", totalInvalid)
 
-	if totalInvalid > 0 {
-		msg += "\nDetails:\n" + details
+	if len(detailsBlocks) > 0 {
+		msg += "\nDetails:\n" + strings.Join(detailsBlocks, "\n")
 	} else {
 		msg += "\nDetails: All links are valid!"
 	}

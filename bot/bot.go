@@ -107,7 +107,7 @@ func InitBot() {
 
 	b.Handle(&btnTools, func(c tele.Context) error {
 		c.Respond()
-		return c.Edit("⚙️ Tools & Administration\n\nPlease select an action below:", toolsMenu)
+		return c.Edit("⚙️ Tools\n\nPlease select an action below:", toolsMenu)
 	})
 
 	b.Handle(&btnRAM, func(c tele.Context) error {
@@ -163,7 +163,7 @@ func InitBot() {
 
 	b.Handle(&btnWebToolsBack, func(c tele.Context) error {
 		c.Respond()
-		return c.Edit("⚙️ Tools & Administration\n\nPlease select an action below:", toolsMenu)
+		return c.Edit("⚙️ Tools\n\nPlease select an action below:", toolsMenu)
 	})
 
 	// Tools handlers
