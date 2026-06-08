@@ -1,15 +1,23 @@
 package controllers
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
-	"github.com/nekowawolf/airdropv2/module"
 	"github.com/nekowawolf/airdropv2/models"
+	"github.com/nekowawolf/airdropv2/module"
+	"github.com/nekowawolf/airdropv2/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	
 )
 
+func invalidateCommunityCache() {
+	utils.InvalidateCache("cryptocommunity", "cryptocommunity_stats")
+}
+
 func GetAllCryptoCommunity(c *fiber.Ctx) error {
-	cryptoCommunities, err := module.GetAllCryptoCommunity()
+	cryptoCommunities, err := utils.GetOrSetCache("cryptocommunity", 24*time.Hour, func() ([]models.CryptoCommunity, error) {
+		return module.GetAllCryptoCommunity()
+	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -23,7 +31,9 @@ func GetAllCryptoCommunity(c *fiber.Ctx) error {
 }
 
 func GetCryptoCommunityStats(c *fiber.Ctx) error {
-	stats, err := module.GetCryptoCommunityStats()
+	stats, err := utils.GetOrSetCache("cryptocommunity_stats", 24*time.Hour, func() (map[string]interface{}, error) {
+		return module.GetCryptoCommunityStats()
+	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -78,6 +88,7 @@ func InsertCryptoCommunity(c *fiber.Ctx) error {
 		})
 	}
 
+	invalidateCommunityCache()
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message":   "CryptoCommunity created successfully",
 		"insertedID": insertedID,
@@ -138,6 +149,7 @@ func UpdateCryptoCommunityByID(c *fiber.Ctx) error {
 		})
 	}
 
+	invalidateCommunityCache()
 	return c.JSON(fiber.Map{
 		"message": "CryptoCommunity updated successfully",
 		"data":    updatedCommunity,
@@ -160,6 +172,7 @@ func DeleteCryptoCommunityByID(c *fiber.Ctx) error {
 		})
 	}
 
+	invalidateCommunityCache()
 	return c.JSON(fiber.Map{
 		"message": "CryptoCommunity deleted successfully",
 	})

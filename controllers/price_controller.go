@@ -2,9 +2,12 @@ package controllers
 
 import (
 	"log"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/nekowawolf/airdropv2/models"
 	"github.com/nekowawolf/airdropv2/module"
+	"github.com/nekowawolf/airdropv2/utils"
 )
 
 func PriceHandler(c *fiber.Ctx) error {
@@ -20,7 +23,11 @@ func PriceHandler(c *fiber.Ctx) error {
 	results := make(map[string]interface{})
 
 	for key, url := range coins {
-		data, err := module.GetPrice(url)
+		currentURL := url
+		data, err := utils.GetOrSetCache("price:"+key, 5*time.Minute, func() (*models.CryptoData, error) {
+			return module.GetPrice(currentURL)
+		})
+		
 		if err != nil {
 			log.Println("Error fetching price for", key, ":", err)
 			results[key] = "Error"

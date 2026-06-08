@@ -5,6 +5,7 @@ import (
 	"github.com/nekowawolf/airdropv2/middlewares"
 	"github.com/nekowawolf/airdropv2/routes"
 	"github.com/nekowawolf/airdropv2/bot"
+	"github.com/nekowawolf/airdropv2/config"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"os"
 )
@@ -16,6 +17,7 @@ func main() {
 
 	bot.InitBot()
 	bot.InitScheduler()
+	config.InitRedis()
 
 	routes.SetupRoutes(app)
 

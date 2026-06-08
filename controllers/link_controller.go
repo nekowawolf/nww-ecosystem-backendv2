@@ -1,16 +1,22 @@
 package controllers
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/nekowawolf/airdropv2/models"
 	"github.com/nekowawolf/airdropv2/module"
+	"github.com/nekowawolf/airdropv2/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // ==================== PROFILE CONTROLLERS ====================
 
 func GetProfile(c *fiber.Ctx) error {
-	profile, err := module.GetProfile()
+	profile, err := utils.GetOrSetCache("profilelink", 24*time.Hour, func() (*models.Profile, error) {
+		return module.GetProfile()
+	})
 	if err != nil {
 		// Return default profile if not found
 		return c.JSON(fiber.Map{
@@ -53,13 +59,16 @@ func UpdateProfile(c *fiber.Ctx) error {
 		})
 	}
 
+	utils.InvalidateCache("profilelink")
 	return c.JSON(fiber.Map{
 		"message": "Profile updated successfully",
 	})
 }
 
 func GetPostStats(c *fiber.Ctx) error {
-	stats, err := module.GetPostStats()
+	stats, err := utils.GetOrSetCache("postslink_stats", 24*time.Hour, func() (interface{}, error) {
+		return module.GetPostStats()
+	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve stats",
@@ -79,7 +88,11 @@ func GetAllPosts(c *fiber.Ctx) error {
 	category := c.Query("category", "")
 	search := c.Query("search", "")
 
-	posts, err := module.GetPostsPaginated(page, limit, category, search)
+	cacheKey := fmt.Sprintf("postslink:%d:%d:%s:%s", page, limit, category, search)
+
+	posts, err := utils.GetOrSetCache(cacheKey, 24*time.Hour, func() (interface{}, error) {
+		return module.GetPostsPaginated(page, limit, category, search)
+	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve posts",
@@ -150,6 +163,8 @@ func CreatePost(c *fiber.Ctx) error {
 	}
 
 	if objectID, ok := insertedID.(primitive.ObjectID); ok {
+		utils.InvalidateCache("postslink_stats")
+		utils.InvalidateCachePrefix("postslink:")
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 			"message":     "Post created successfully",
 			"inserted_id": objectID.Hex(),
@@ -183,6 +198,8 @@ func UpdatePost(c *fiber.Ctx) error {
 		})
 	}
 
+	utils.InvalidateCache("postslink_stats")
+	utils.InvalidateCachePrefix("postslink:")
 	return c.JSON(fiber.Map{
 		"message": "Post updated successfully",
 	})
@@ -203,6 +220,8 @@ func DeletePost(c *fiber.Ctx) error {
 		})
 	}
 
+	utils.InvalidateCache("postslink_stats")
+	utils.InvalidateCachePrefix("postslink:")
 	return c.JSON(fiber.Map{
 		"message": "Post deleted successfully",
 	})

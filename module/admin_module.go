@@ -3,7 +3,6 @@ package module
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/nekowawolf/airdropv2/config"
 	"github.com/nekowawolf/airdropv2/models"
@@ -61,38 +60,4 @@ func LoginAdmin(username, password string) (bool, error) {
 
 	fmt.Println("login successful")
 	return true, nil
-}
-
-func SaveRefreshToken(adminID, token string, expiresAt time.Time) error {
-	collection := config.Database.Collection("refresh_tokens")
-	doc := models.RefreshToken{
-		ID:        primitive.NewObjectID(),
-		Token:     token,
-		AdminID:   adminID,
-		ExpiresAt: expiresAt,
-	}
-	_, err := collection.InsertOne(context.TODO(), doc)
-	return err
-}
-
-func CheckRefreshToken(token string) bool {
-	collection := config.Database.Collection("refresh_tokens")
-	var rt models.RefreshToken
-
-	err := collection.FindOne(context.TODO(), bson.M{"token": token}).Decode(&rt)
-	if err != nil {
-		return false
-	}
-
-	if time.Now().After(rt.ExpiresAt) {
-		return false
-	}
-
-	return true
-}
-
-func DeleteRefreshToken(token string) error {
-	collection := config.Database.Collection("refresh_tokens")
-	_, err := collection.DeleteOne(context.TODO(), bson.M{"token": token})
-	return err
 }

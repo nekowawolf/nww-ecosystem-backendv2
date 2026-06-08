@@ -1,14 +1,23 @@
 package controllers
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/nekowawolf/airdropv2/models"
 	"github.com/nekowawolf/airdropv2/module"
+	"github.com/nekowawolf/airdropv2/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+func invalidateAirdropCache() {
+	utils.InvalidateCache("freeairdrop", "paidairdrop", "allairdrop", "allairdrop_stats")
+}
+
 func GetAllAirdropHandler(c *fiber.Ctx) error {
-	data, err := module.GetAllAirdrop()
+	data, err := utils.GetOrSetCache("allairdrop", 24*time.Hour, func() ([]interface{}, error) {
+		return module.GetAllAirdrop()
+	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve all Airdrop data",
@@ -22,7 +31,9 @@ func GetAllAirdropHandler(c *fiber.Ctx) error {
 }
 
 func GetAllAirdropStatsHandler(c *fiber.Ctx) error {
-	stats, err := module.GetAllAirdropStats()
+	stats, err := utils.GetOrSetCache("allairdrop_stats", 24*time.Hour, func() (map[string]int, error) {
+		return module.GetAllAirdropStats()
+	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -36,7 +47,9 @@ func GetAllAirdropStatsHandler(c *fiber.Ctx) error {
 }
 
 func GetAirdropFreeHandler(c *fiber.Ctx) error {
-	data, err := module.GetAllAirdropFree()
+	data, err := utils.GetOrSetCache("freeairdrop", 24*time.Hour, func() ([]models.AirdropFree, error) {
+		return module.GetAllAirdropFree()
+	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve AirdropFree data",
@@ -50,7 +63,9 @@ func GetAirdropFreeHandler(c *fiber.Ctx) error {
 }
 
 func GetAirdropPaidHandler(c *fiber.Ctx) error {
-	data, err := module.GetAllAirdropPaid()
+	data, err := utils.GetOrSetCache("paidairdrop", 24*time.Hour, func() ([]models.AirdropPaid, error) {
+		return module.GetAllAirdropPaid()
+	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve AirdropFree data",
@@ -239,6 +254,7 @@ func InsertAirdropFreeHandler(c *fiber.Ctx) error {
 	}
 
 	if objectID, ok := insertedID.(primitive.ObjectID); ok {
+		invalidateAirdropCache()
 		return c.JSON(fiber.Map{
 			"message":     "AirdropFree inserted successfully",
 			"inserted_id": objectID.Hex(),
@@ -294,6 +310,7 @@ func InsertAirdropPaidHandler(c *fiber.Ctx) error {
 	}
 
 	if objectID, ok := insertedID.(primitive.ObjectID); ok {
+		invalidateAirdropCache()
 		return c.JSON(fiber.Map{
 			"message":     "AirdropPaid inserted successfully",
 			"inserted_id": objectID.Hex(),
@@ -392,6 +409,7 @@ func UpdateAllAirdropByIDHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	invalidateAirdropCache()
 	return c.JSON(fiber.Map{
 		"message": "Airdrop updated successfully",
 	})
@@ -464,6 +482,7 @@ func UpdateAirdropFreeByIDHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	invalidateAirdropCache()
 	return c.JSON(fiber.Map{
 		"message": "AirdropFree updated successfully",
 	})
@@ -536,6 +555,7 @@ func UpdateAirdropPaidByIDHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	invalidateAirdropCache()
 	return c.JSON(fiber.Map{
 		"message": "AirdropPaid updated successfully",
 	})
@@ -557,6 +577,7 @@ func DeleteAllAirdropByIDHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	invalidateAirdropCache()
 	return c.JSON(fiber.Map{
 		"message": "Airdrop deleted successfully",
 	})
@@ -578,6 +599,7 @@ func DeleteAirdropFreeByIDHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	invalidateAirdropCache()
 	return c.JSON(fiber.Map{
 		"message": "AirdropFree deleted successfully",
 	})
@@ -599,6 +621,7 @@ func DeleteAirdropPaidByIDHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	invalidateAirdropCache()
 	return c.JSON(fiber.Map{
 		"message": "AirdropPaid deleted successfully",
 	})
