@@ -42,7 +42,13 @@ func InvalidateCache(keys ...string) {
 func InvalidateCachePrefix(prefix string) {
 	ctx := context.Background()
 	iter := config.RedisClient.Scan(ctx, 0, prefix+"*", 0).Iterator()
+	
+	var keys []string
 	for iter.Next(ctx) {
-		config.RedisClient.Del(ctx, iter.Val())
+		keys = append(keys, iter.Val())
+	}
+	
+	if err := iter.Err(); err == nil && len(keys) > 0 {
+		config.RedisClient.Del(ctx, keys...)
 	}
 }

@@ -9,50 +9,53 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InsertCryptoCommunity(name, platforms, category, imgURL, linkURL string) interface{} {
-    newCrypto := models.CryptoCommunity{
-        ID:        primitive.NewObjectID(),
-        Name:      name,
-        Platforms: platforms,
-        Category:  category,
-        ImgURL:    imgURL,
-        LinkURL:   linkURL,
+func InsertWeb3Tool(name, description, category string, chains []string, imageUrl, website, twitter, discord, telegram string) interface{} {
+    newTool := models.Web3Tool{
+        ID:          primitive.NewObjectID(),
+        Name:        name,
+        Description: description,
+        Category:    category,
+        Chains:      chains,
+        ImageURL:    imageUrl,
+        Website:     website,
+        Twitter:     twitter,
+        Discord:     discord,
+        Telegram:    telegram,
     }
 
-    insertedID, err := InsertDocument("cryptoCommunity", newCrypto)
+    insertedID, err := InsertDocument("web3Tool", newTool)
     if err != nil {
         fmt.Println(err)
         return nil
     }
 
-    fmt.Printf("Inserted new crypto community with ID: %v\n", insertedID)
     return insertedID
 }
 
-func GetAllCryptoCommunity() ([]models.CryptoCommunity, error) {
+func GetAllWeb3Tool() ([]models.Web3Tool, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
-	collection := config.Database.Collection("cryptoCommunity")
+	collection := config.Database.Collection("web3Tool")
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving data: %v", err)
 	}
 	defer cursor.Close(ctx)
 
-	var communities []models.CryptoCommunity
-	if err = cursor.All(ctx, &communities); err != nil {
+	var tools []models.Web3Tool
+	if err = cursor.All(ctx, &tools); err != nil {
 		return nil, fmt.Errorf("error decoding data: %v", err)
 	}
 
-	return communities, nil
+	return tools, nil
 }
 
-func GetCryptoCommunityStats() (map[string]interface{}, error) {
+func GetWeb3ToolStats() (map[string]interface{}, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
-    collection := config.Database.Collection("cryptoCommunity")
+    collection := config.Database.Collection("web3Tool")
 
     pipeline := bson.A{
         bson.M{
@@ -63,8 +66,9 @@ func GetCryptoCommunityStats() (map[string]interface{}, error) {
                 "categories": bson.A{
                     bson.M{"$group": bson.M{"_id": "$category", "count": bson.M{"$sum": 1}}},
                 },
-                "platforms": bson.A{
-                    bson.M{"$group": bson.M{"_id": "$platforms", "count": bson.M{"$sum": 1}}},
+                "chains": bson.A{
+                    bson.M{"$unwind": "$chains"},
+                    bson.M{"$group": bson.M{"_id": "$chains", "count": bson.M{"$sum": 1}}},
                 },
             },
         },
@@ -84,7 +88,7 @@ func GetCryptoCommunityStats() (map[string]interface{}, error) {
     stats := map[string]interface{}{
         "total":      0,
         "categories": map[string]int{},
-        "platforms":  map[string]int{},
+        "chains":     map[string]int{},
     }
 
     if len(results) > 0 {
@@ -114,34 +118,34 @@ func GetCryptoCommunityStats() (map[string]interface{}, error) {
         }
         stats["categories"] = categories
 
-        platforms := make(map[string]int)
-        if platArr, ok := facet["platforms"].(bson.A); ok {
-            for _, item := range platArr {
+        chains := make(map[string]int)
+        if chainArr, ok := facet["chains"].(bson.A); ok {
+            for _, item := range chainArr {
                 if doc, ok := item.(bson.M); ok {
                     key := ""
                     if doc["_id"] != nil {
                         key = doc["_id"].(string)
                     }
                     if count, ok := doc["count"].(int32); ok {
-                        platforms[key] = int(count)
+                        chains[key] = int(count)
                     }
                 }
             }
         }
-        stats["platforms"] = platforms
+        stats["chains"] = chains
     }
 
     return stats, nil
 }
 
-func GetCryptoCommunityByID(id primitive.ObjectID) (*models.CryptoCommunity, error) {
+func GetWeb3ToolByID(id primitive.ObjectID) (*models.Web3Tool, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
-	collection := config.Database.Collection("cryptoCommunity")
+	collection := config.Database.Collection("web3Tool")
 	filter := bson.M{"_id": id}
 
-	var result models.CryptoCommunity
+	var result models.Web3Tool
 	err := collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		return nil, err
@@ -150,19 +154,23 @@ func GetCryptoCommunityByID(id primitive.ObjectID) (*models.CryptoCommunity, err
 	return &result, nil
 }
 
-func UpdateCryptoCommunityByID(id primitive.ObjectID, updateData models.CryptoCommunity) (*models.CryptoCommunity, error) {
+func UpdateWeb3ToolByID(id primitive.ObjectID, updateData models.Web3Tool) (*models.Web3Tool, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
-	collection := config.Database.Collection("cryptoCommunity")
+	collection := config.Database.Collection("web3Tool")
 
 	update := bson.M{
 		"$set": bson.M{
-			"name":       updateData.Name,
-			"platforms":  updateData.Platforms,
-			"category":   updateData.Category,
-			"img_url":    updateData.ImgURL,
-			"link_url":   updateData.LinkURL,
+			"name":        updateData.Name,
+			"description": updateData.Description,
+			"category":    updateData.Category,
+			"chains":      updateData.Chains,
+			"imageUrl":    updateData.ImageURL,
+			"website":     updateData.Website,
+			"twitter":     updateData.Twitter,
+			"discord":     updateData.Discord,
+			"telegram":    updateData.Telegram,
 		},
 	}
 
@@ -174,20 +182,20 @@ func UpdateCryptoCommunityByID(id primitive.ObjectID, updateData models.CryptoCo
 	return &updateData, nil
 }
 
-func DeleteCryptoCommunityByID(id primitive.ObjectID) error {
+func DeleteWeb3ToolByID(id primitive.ObjectID) error {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
-    collection := config.Database.Collection("cryptoCommunity")
+    collection := config.Database.Collection("web3Tool")
     filter := bson.M{"_id": id}
 
     result, err := collection.DeleteOne(ctx, filter)
     if err != nil {
-        return fmt.Errorf("error deleting crypto community for ID %s: %s", id.Hex(), err.Error())
+        return fmt.Errorf("error deleting web3 tool for ID %s: %s", id.Hex(), err.Error())
     }
 
     if result.DeletedCount == 0 {
-        return fmt.Errorf("no crypto community found with ID %s", id.Hex())
+        return fmt.Errorf("no web3 tool found with ID %s", id.Hex())
     }
 
     return nil

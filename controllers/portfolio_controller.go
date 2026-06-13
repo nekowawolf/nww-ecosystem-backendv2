@@ -21,8 +21,8 @@ func GetPortfolio(c *fiber.Ctx) error {
 
 func UpdatePortfolio(c *fiber.Ctx) error {
 	var req models.Portfolio
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 	if err := module.UpdatePortfolio(req); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Update failed"})
@@ -33,8 +33,8 @@ func UpdatePortfolio(c *fiber.Ctx) error {
 
 func UpdateHeroProfile(c *fiber.Ctx) error {
 	var req models.HeroProfile
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 	if err := module.UpdateHeroProfile(req); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Update hero profile failed"})
@@ -45,8 +45,8 @@ func UpdateHeroProfile(c *fiber.Ctx) error {
 
 func AddCertificate(c *fiber.Ctx) error {
 	var req models.Certificate
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 	if err := module.AddCertificate(req); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to add certificate"})
@@ -57,8 +57,8 @@ func AddCertificate(c *fiber.Ctx) error {
 
 func AddDesign(c *fiber.Ctx) error {
 	var req models.Design
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 	if err := module.AddDesign(req); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to add design"})
@@ -69,8 +69,8 @@ func AddDesign(c *fiber.Ctx) error {
 
 func AddProject(c *fiber.Ctx) error {
 	var req models.Project
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 	if err := module.AddProject(req); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to add project"})
@@ -81,8 +81,8 @@ func AddProject(c *fiber.Ctx) error {
 
 func AddExperience(c *fiber.Ctx) error {
 	var req models.Experience
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 	if err := module.AddExperience(req); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to add experience"})
@@ -93,8 +93,8 @@ func AddExperience(c *fiber.Ctx) error {
 
 func AddEducation(c *fiber.Ctx) error {
 	var req models.Education
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 	if err := module.AddEducation(req); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to add education"})
@@ -105,8 +105,8 @@ func AddEducation(c *fiber.Ctx) error {
 
 func AddTechSkill(c *fiber.Ctx) error {
 	var req models.SkillItem
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 	if err := module.AddTechSkill(req); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to add tech skill"})
@@ -157,8 +157,8 @@ func DeleteEducation(c *fiber.Ctx) error {
 
 func AddDesignSkill(c *fiber.Ctx) error {
 	var req models.SkillItem
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 	if err := module.AddDesignSkill(req); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to add design skill"})

@@ -27,6 +27,14 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/cryptocommunity", controllers.GetAllCryptoCommunity)
 	api.Get("/cryptocommunity/stats", controllers.GetCryptoCommunityStats)
 
+	// Public AI Tool routes
+	api.Get("/aitools", controllers.GetAllAITool)
+	api.Get("/aitools/stats", controllers.GetAIToolStats)
+
+	// Public Web3 Tool routes
+	api.Get("/web3tools", controllers.GetAllWeb3Tool)
+	api.Get("/web3tools/stats", controllers.GetWeb3ToolStats)
+
 	// Public price routes	
 	api.Get("/price", controllers.PriceHandler)
 
@@ -56,6 +64,18 @@ func SetupRoutes(app *fiber.App) {
 	protected.Post("/cryptocommunity", controllers.InsertCryptoCommunity)
 	protected.Put("/cryptocommunity/:id", controllers.UpdateCryptoCommunityByID)
 	protected.Delete("/cryptocommunity/:id", controllers.DeleteCryptoCommunityByID)
+
+	// Protected AI Tool routes
+	protected.Get("/aitools/:id", controllers.GetAIToolByID)
+	protected.Post("/aitools", controllers.InsertAITool)
+	protected.Put("/aitools/:id", controllers.UpdateAIToolByID)
+	protected.Delete("/aitools/:id", controllers.DeleteAIToolByID)
+
+	// Protected Web3 Tool routes
+	protected.Get("/web3tools/:id", controllers.GetWeb3ToolByID)
+	protected.Post("/web3tools", controllers.InsertWeb3Tool)
+	protected.Put("/web3tools/:id", controllers.UpdateWeb3ToolByID)
+	protected.Delete("/web3tools/:id", controllers.DeleteWeb3ToolByID)
 
 	// Protected portfolio routes
 	protected.Put("/portfolio", controllers.UpdatePortfolio)

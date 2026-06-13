@@ -1,7 +1,7 @@
 package module
 
 import (
-	"context"
+	"github.com/nekowawolf/airdropv2/utils"
 	"errors"
 	"fmt"
 	"time"
@@ -16,10 +16,13 @@ import (
 // ==================== PROFILE CRUD ====================
 
 func GetProfile() (*models.Profile, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("profile")
 	var profile models.Profile
 
-	err := collection.FindOne(context.TODO(), bson.M{}).Decode(&profile)
+	err := collection.FindOne(ctx, bson.M{}).Decode(&profile)
 	if err != nil {
 		return nil, err
 	}
@@ -27,37 +30,43 @@ func GetProfile() (*models.Profile, error) {
 }
 
 func UpdateProfile(profile models.Profile) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("profile")
 
 	var existing models.Profile
-	err := collection.FindOne(context.TODO(), bson.M{}).Decode(&existing)
+	err := collection.FindOne(ctx, bson.M{}).Decode(&existing)
 
 	if err != nil {
 		profile.ID = primitive.NewObjectID()
-		_, err = collection.InsertOne(context.TODO(), profile)
+		_, err = collection.InsertOne(ctx, profile)
 		return err
 	}
 
 	profile.ID = existing.ID
 	filter := bson.M{"_id": existing.ID}
 	update := bson.M{"$set": profile}
-	_, err = collection.UpdateOne(context.TODO(), filter, update)
+	_, err = collection.UpdateOne(ctx, filter, update)
 	return err
 }
 
 // ==================== POSTS CRUD ====================
 
 func GetAllPosts() ([]models.LinkPost, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("link_posts")
 
-	cursor, err := collection.Find(context.TODO(), bson.M{})
+	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("GetAllPosts Find: %v", err)
 	}
-	defer cursor.Close(context.TODO())
+	defer cursor.Close(ctx)
 
 	var posts []models.LinkPost
-	if err = cursor.All(context.TODO(), &posts); err != nil {
+	if err = cursor.All(ctx, &posts); err != nil {
 		return nil, fmt.Errorf("GetAllPosts All: %v", err)
 	}
 
@@ -65,6 +74,9 @@ func GetAllPosts() ([]models.LinkPost, error) {
 }
 
 func GetPostsPaginated(page, limit int, category, search string) ([]models.LinkPost, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("link_posts")
 
 	skip := (page - 1) * limit
@@ -84,14 +96,14 @@ func GetPostsPaginated(page, limit int, category, search string) ([]models.LinkP
 		filter["caption"] = bson.M{"$regex": primitive.Regex{Pattern: search, Options: "i"}}
 	}
 
-	cursor, err := collection.Find(context.TODO(), filter, findOptions)
+	cursor, err := collection.Find(ctx, filter, findOptions)
 	if err != nil {
 		return nil, fmt.Errorf("GetPostsPaginated Find: %v", err)
 	}
-	defer cursor.Close(context.TODO())
+	defer cursor.Close(ctx)
 
 	var posts []models.LinkPost
-	if err = cursor.All(context.TODO(), &posts); err != nil {
+	if err = cursor.All(ctx, &posts); err != nil {
 		return nil, fmt.Errorf("GetPostsPaginated All: %v", err)
 	}
 
@@ -104,32 +116,38 @@ func GetPostsPaginated(page, limit int, category, search string) ([]models.LinkP
 }
 
 func GetPostStats() (map[string]int64, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("link_posts")
 	
 	stats := make(map[string]int64)
-	total, err := collection.CountDocuments(context.TODO(), bson.M{})
+	total, err := collection.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
 	stats["all"] = total
 
-	aiReq, _ := collection.CountDocuments(context.TODO(), bson.M{"category": "AI Prompts"})
+	aiReq, _ := collection.CountDocuments(ctx, bson.M{"category": "AI Prompts"})
 	stats["AI Prompts"] = aiReq
 
-	tplReq, _ := collection.CountDocuments(context.TODO(), bson.M{"category": "Templates"})
+	tplReq, _ := collection.CountDocuments(ctx, bson.M{"category": "Templates"})
 	stats["Templates"] = tplReq
 
-	projReq, _ := collection.CountDocuments(context.TODO(), bson.M{"category": "projects"})
+	projReq, _ := collection.CountDocuments(ctx, bson.M{"category": "projects"})
 	stats["projects"] = projReq
 
 	return stats, nil
 }
 
 func GetPostByID(id primitive.ObjectID) (*models.LinkPost, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("link_posts")
 	var post models.LinkPost
 
-	err := collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&post)
+	err := collection.FindOne(ctx, bson.M{"_id": id}).Decode(&post)
 	if err != nil {
 		return nil, err
 	}
@@ -137,6 +155,8 @@ func GetPostByID(id primitive.ObjectID) (*models.LinkPost, error) {
 }
 
 func InsertPost(post models.LinkPost) (interface{}, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
 	collection := config.Database.Collection("link_posts")
 
 	now := time.Now()
@@ -151,7 +171,7 @@ func InsertPost(post models.LinkPost) (interface{}, error) {
 		post.Username = profile.Username
 	}
 
-	result, err := collection.InsertOne(context.TODO(), post)
+	result, err := collection.InsertOne(ctx, post)
 	if err != nil {
 		return nil, fmt.Errorf("InsertPost: %v", err)
 	}
@@ -160,6 +180,9 @@ func InsertPost(post models.LinkPost) (interface{}, error) {
 }
 
 func UpdatePost(id primitive.ObjectID, post models.LinkPost) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("link_posts")
 
 	existing, err := GetPostByID(id)
@@ -177,7 +200,7 @@ func UpdatePost(id primitive.ObjectID, post models.LinkPost) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": post}
 
-	result, err := collection.UpdateOne(context.TODO(), filter, update)
+	result, err := collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return fmt.Errorf("UpdatePost: %v", err)
 	}
@@ -190,9 +213,12 @@ func UpdatePost(id primitive.ObjectID, post models.LinkPost) error {
 }
 
 func DeletePost(id primitive.ObjectID) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("link_posts")
 
-	result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": id})
+	result, err := collection.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {
 		return fmt.Errorf("DeletePost: %v", err)
 	}
@@ -202,7 +228,7 @@ func DeletePost(id primitive.ObjectID) error {
 	}
 
 	viewCollection := config.Database.Collection("view_stats")
-	_, _ = viewCollection.DeleteMany(context.TODO(), bson.M{"post_id": id})
+	_, _ = viewCollection.DeleteMany(ctx, bson.M{"post_id": id})
 
 	return nil
 }
@@ -210,10 +236,13 @@ func DeletePost(id primitive.ObjectID) error {
 // ==================== VIEWS SYSTEM ====================
 
 func IncrementPostView(postID primitive.ObjectID, sessionID string) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	viewCollection := config.Database.Collection("view_stats")
 
 	var existingView models.ViewStats
-	err := viewCollection.FindOne(context.TODO(), bson.M{
+	err := viewCollection.FindOne(ctx, bson.M{
 		"post_id":    postID,
 		"session_id": sessionID,
 	}).Decode(&existingView)
@@ -229,14 +258,14 @@ func IncrementPostView(postID primitive.ObjectID, sessionID string) error {
 		ViewedAt:  time.Now(),
 	}
 
-	_, err = viewCollection.InsertOne(context.TODO(), view)
+	_, err = viewCollection.InsertOne(ctx, view)
 	if err != nil {
 		return err
 	}
 
 	postCollection := config.Database.Collection("link_posts")
 	_, err = postCollection.UpdateOne(
-		context.TODO(),
+		ctx,
 		bson.M{"_id": postID},
 		bson.M{"$inc": bson.M{"views": 1}},
 	)
@@ -245,6 +274,9 @@ func IncrementPostView(postID primitive.ObjectID, sessionID string) error {
 }
 
 func GetPostViewCount(postID primitive.ObjectID) (int64, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("view_stats")
-	return collection.CountDocuments(context.TODO(), bson.M{"post_id": postID})
+	return collection.CountDocuments(ctx, bson.M{"post_id": postID})
 }

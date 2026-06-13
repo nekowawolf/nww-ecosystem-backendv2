@@ -47,10 +47,8 @@ func GetProfile(c *fiber.Ctx) error {
 
 func UpdateProfile(c *fiber.Ctx) error {
 	var req models.Profile
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 
 	if err := module.UpdateProfile(req); err != nil {
@@ -106,12 +104,9 @@ func GetAllPosts(c *fiber.Ctx) error {
 }
 
 func GetPostByID(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	post, err := module.GetPostByID(id)
@@ -139,10 +134,8 @@ func GetPostByID(c *fiber.Ctx) error {
 
 func CreatePost(c *fiber.Ctx) error {
 	var req models.LinkPost
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 
 	if req.Caption == "" {
@@ -177,19 +170,14 @@ func CreatePost(c *fiber.Ctx) error {
 }
 
 func UpdatePost(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	var req models.LinkPost
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 
 	if err := module.UpdatePost(id, req); err != nil {
@@ -206,12 +194,9 @@ func UpdatePost(c *fiber.Ctx) error {
 }
 
 func DeletePost(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	if err := module.DeletePost(id); err != nil {

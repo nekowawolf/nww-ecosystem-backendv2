@@ -1,7 +1,7 @@
 package module
 
 import (
-	"context"
+	"github.com/nekowawolf/airdropv2/utils"
 	"errors"
 	"fmt"
 	"time"
@@ -11,15 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-func InsertOneDocAirdrop(collection string, doc interface{}) (interface{}, error) {
-	collectionRef := config.Database.Collection(collection)
-	insertResult, err := collectionRef.InsertOne(context.TODO(), doc)
-	if err != nil {
-		return nil, fmt.Errorf("InsertOneDocAirdrop: %v", err)
-	}
-	return insertResult.InsertedID, nil
-}
 
 func InsertAirdropFree(name, task, link, level, status, backed, funds, supply, fdv, marketCap, vesting, linkClaim, linkDiscord, linkTwitter, linkTelegram, imageURL, description, linkGuide string, price float64, usdIncome int) (interface{}, error) {
 	var endedAt *time.Time
@@ -53,7 +44,7 @@ func InsertAirdropFree(name, task, link, level, status, backed, funds, supply, f
 		CreatedAt:   time.Now(),
 		EndedAt:     endedAt,
 	}
-	return InsertOneDocAirdrop("airdrop_free", freeAirdrop)
+	return InsertDocument("airdrop_free", freeAirdrop)
 }
 
 func InsertAirdropPaid(name, task, link, level, status, backed, funds, supply, fdv, marketCap, vesting, linkClaim, linkDiscord, linkTwitter, linkTelegram, imageURL, description, linkGuide string, price float64, usdIncome int) (interface{}, error) {
@@ -88,7 +79,7 @@ func InsertAirdropPaid(name, task, link, level, status, backed, funds, supply, f
 		CreatedAt:   time.Now(),
 		EndedAt:     endedAt,
 	}
-	return InsertOneDocAirdrop("airdrop_paid", paidAirdrop)
+	return InsertDocument("airdrop_paid", paidAirdrop)
 }
 
 func GetAllAirdrop() ([]interface{}, error) {
@@ -114,42 +105,45 @@ func GetAllAirdrop() ([]interface{}, error) {
 }
 
 func GetAllAirdropStats() (map[string]int, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	freeColl := config.Database.Collection("airdrop_free")
 	paidColl := config.Database.Collection("airdrop_paid")
 
 	var total, active, ended int64
 
-	totalCount, err := freeColl.CountDocuments(context.TODO(), bson.M{})
+	totalCount, err := freeColl.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("error counting total free: %v", err)
 	}
 	total += totalCount
 
-	activeCount, err := freeColl.CountDocuments(context.TODO(), bson.M{"status": bson.M{"$ne": "ended"}})
+	activeCount, err := freeColl.CountDocuments(ctx, bson.M{"status": bson.M{"$ne": "ended"}})
 	if err != nil {
 		return nil, fmt.Errorf("error counting active free: %v", err)
 	}
 	active += activeCount
 
-	endedCount, err := freeColl.CountDocuments(context.TODO(), bson.M{"status": "ended"})
+	endedCount, err := freeColl.CountDocuments(ctx, bson.M{"status": "ended"})
 	if err != nil {
 		return nil, fmt.Errorf("error counting ended free: %v", err)
 	}
 	ended += endedCount
 
-	totalCount, err = paidColl.CountDocuments(context.TODO(), bson.M{})
+	totalCount, err = paidColl.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("error counting total paid: %v", err)
 	}
 	total += totalCount
 
-	activeCount, err = paidColl.CountDocuments(context.TODO(), bson.M{"status": bson.M{"$ne": "ended"}})
+	activeCount, err = paidColl.CountDocuments(ctx, bson.M{"status": bson.M{"$ne": "ended"}})
 	if err != nil {
 		return nil, fmt.Errorf("error counting active paid: %v", err)
 	}
 	active += activeCount
 
-	endedCount, err = paidColl.CountDocuments(context.TODO(), bson.M{"status": "ended"})
+	endedCount, err = paidColl.CountDocuments(ctx, bson.M{"status": "ended"})
 	if err != nil {
 		return nil, fmt.Errorf("error counting ended paid: %v", err)
 	}
@@ -163,26 +157,32 @@ func GetAllAirdropStats() (map[string]int, error) {
 }
 
 func GetAllAirdropFree() ([]models.AirdropFree, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("airdrop_free")
-	cursor, err := collection.Find(context.TODO(), bson.M{})
+	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("GetAllAirdropFree Find: %v", err)
 	}
 	var airdrops []models.AirdropFree
-	if err = cursor.All(context.TODO(), &airdrops); err != nil {
+	if err = cursor.All(ctx, &airdrops); err != nil {
 		return nil, fmt.Errorf("GetAllAirdropFree All: %v", err)
 	}
 	return airdrops, nil
 }
 
 func GetAllAirdropPaid() ([]models.AirdropPaid, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("airdrop_paid")
-	cursor, err := collection.Find(context.TODO(), bson.M{})
+	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("GetAllAirdropPaid Find: %v", err)
 	}
 	var airdrops []models.AirdropPaid
-	if err = cursor.All(context.TODO(), &airdrops); err != nil {
+	if err = cursor.All(ctx, &airdrops); err != nil {
 		return nil, fmt.Errorf("GetAllAirdropPaid All: %v", err)
 	}
 	return airdrops, nil
@@ -203,9 +203,12 @@ func GetAllAirdropByID(id primitive.ObjectID) (interface{}, error) {
 }
 
 func GetAirdropFreeByID(id primitive.ObjectID) (models.AirdropFree, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("airdrop_free")
 	var airdrop models.AirdropFree
-	err := collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&airdrop)
+	err := collection.FindOne(ctx, bson.M{"_id": id}).Decode(&airdrop)
 	if err != nil {
 		return models.AirdropFree{}, err
 	}
@@ -213,63 +216,16 @@ func GetAirdropFreeByID(id primitive.ObjectID) (models.AirdropFree, error) {
 }
 
 func GetAirdropPaidByID(id primitive.ObjectID) (models.AirdropPaid, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("airdrop_paid")
 	var airdrop models.AirdropPaid
-	err := collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&airdrop)
+	err := collection.FindOne(ctx, bson.M{"_id": id}).Decode(&airdrop)
 	if err != nil {
 		return models.AirdropPaid{}, err
 	}
 	return airdrop, nil
-}
-
-func GetAirdropFreeByName(name string) ([]models.AirdropFree, error) {
-	collection := config.Database.Collection("airdrop_free")
-	filter := bson.M{"name": bson.M{"$regex": primitive.Regex{Pattern: name, Options: "i"}}}
-	cursor, err := collection.Find(context.TODO(), filter)
-	if err != nil {
-		return nil, fmt.Errorf("GetAirdropFreeByName Find: %v", err)
-	}
-	var airdrops []models.AirdropFree
-	if err = cursor.All(context.TODO(), &airdrops); err != nil {
-		return nil, fmt.Errorf("GetAirdropFreeByName All: %v", err)
-	}
-	return airdrops, nil
-}
-
-func GetAirdropPaidByName(name string) ([]models.AirdropPaid, error) {
-	collection := config.Database.Collection("airdrop_paid")
-	filter := bson.M{"name": bson.M{"$regex": primitive.Regex{Pattern: name, Options: "i"}}}
-	cursor, err := collection.Find(context.TODO(), filter)
-	if err != nil {
-		return nil, fmt.Errorf("GetAirdropPaidByName Find: %v", err)
-	}
-	var airdrops []models.AirdropPaid
-	if err = cursor.All(context.TODO(), &airdrops); err != nil {
-		return nil, fmt.Errorf("GetAirdropPaidByName All: %v", err)
-	}
-	return airdrops, nil
-}
-
-func GetAllAirdropByName(name string) ([]interface{}, error) {
-	var allAirdrops []interface{}
-
-	freeAirdrops, err := GetAirdropFreeByName(name)
-	if err != nil {
-		return nil, err
-	}
-	for _, free := range freeAirdrops {
-		allAirdrops = append(allAirdrops, free)
-	}
-
-	paidAirdrops, err := GetAirdropPaidByName(name)
-	if err != nil {
-		return nil, err
-	}
-	for _, paid := range paidAirdrops {
-		allAirdrops = append(allAirdrops, paid)
-	}
-
-	return allAirdrops, nil
 }
 
 func UpdateAllAirdropByID(id primitive.ObjectID, name, task, link, level, status, backed, funds, supply, fdv, marketCap, vesting, linkClaim, linkDiscord, linkTwitter, linkTelegram, imageURL, description, linkGuide string, price float64, usdIncome int) error {
@@ -287,6 +243,9 @@ func UpdateAllAirdropByID(id primitive.ObjectID, name, task, link, level, status
 }
 
 func UpdateAirdropFreeByID(id primitive.ObjectID, name, task, link, level, status, backed, funds, supply, fdv, marketCap, vesting, linkClaim, linkDiscord, linkTwitter, linkTelegram, imageURL, description, linkGuide string, price float64, usdIncome int) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := "airdrop_free"
 	filter := bson.M{"_id": id}
 
@@ -327,7 +286,7 @@ func UpdateAirdropFreeByID(id primitive.ObjectID, name, task, link, level, statu
 		"$set": updateFields,
 	}
 
-	result, err := config.Database.Collection(collection).UpdateOne(context.Background(), filter, update)
+	result, err := config.Database.Collection(collection).UpdateOne(ctx, filter, update)
 	if err != nil {
 		return fmt.Errorf("UpdateAirdropFreeByID: %v", err)
 	}
@@ -340,6 +299,9 @@ func UpdateAirdropFreeByID(id primitive.ObjectID, name, task, link, level, statu
 }
 
 func UpdateAirdropPaidByID(id primitive.ObjectID, name, task, link, level, status, backed, funds, supply, fdv, marketCap, vesting, linkClaim, linkDiscord, linkTwitter, linkTelegram, imageURL, description, linkGuide string, price float64, usdIncome int) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := "airdrop_paid"
 	filter := bson.M{"_id": id}
 
@@ -380,7 +342,7 @@ func UpdateAirdropPaidByID(id primitive.ObjectID, name, task, link, level, statu
 		"$set": updateFields,
 	}
 
-	result, err := config.Database.Collection(collection).UpdateOne(context.Background(), filter, update)
+	result, err := config.Database.Collection(collection).UpdateOne(ctx, filter, update)
 	if err != nil {
 		return fmt.Errorf("UpdateAirdropPaidByID: %v", err)
 	}
@@ -407,10 +369,13 @@ func DeleteAllAirdropByID(id primitive.ObjectID) error {
 }
 
 func DeleteAirdropFreeByID(id primitive.ObjectID) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("airdrop_free")
 	filter := bson.M{"_id": id}
 
-	result, err := collection.DeleteOne(context.TODO(), filter)
+	result, err := collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return fmt.Errorf("error deleting data for ID %s in airdrop_free: %s", id.Hex(), err.Error())
 	}
@@ -423,10 +388,13 @@ func DeleteAirdropFreeByID(id primitive.ObjectID) error {
 }
 
 func DeleteAirdropPaidByID(id primitive.ObjectID) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("airdrop_paid")
 	filter := bson.M{"_id": id}
 
-	result, err := collection.DeleteOne(context.TODO(), filter)
+	result, err := collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return fmt.Errorf("error deleting data for ID %s in airdrop_paid: %s", id.Hex(), err.Error())
 	}

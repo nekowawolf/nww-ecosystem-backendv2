@@ -1,7 +1,7 @@
 package module
 
 import (
-	"context"
+	"github.com/nekowawolf/airdropv2/utils"
 
 	"github.com/google/uuid"
 	"github.com/nekowawolf/airdropv2/config"
@@ -12,23 +12,32 @@ import (
 const portfolioCollection = "portfolio"
 
 func GetPortfolio() (*models.Portfolio, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	var result models.Portfolio
 	err := config.Database.Collection(portfolioCollection).
-		FindOne(context.TODO(), bson.M{}).
+		FindOne(ctx, bson.M{}).
 		Decode(&result)
 	return &result, err
 }
 
 func UpdatePortfolio(data models.Portfolio) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	_, err := config.Database.Collection(portfolioCollection).
-		UpdateOne(context.TODO(), bson.M{}, bson.M{"$set": data})
+		UpdateOne(ctx, bson.M{}, bson.M{"$set": data})
 	return err
 }
 
 func UpdateHeroProfile(hero models.HeroProfile) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	_, err := config.Database.Collection(portfolioCollection).
 		UpdateOne(
-			context.TODO(), 
+			ctx, 
 			bson.M{}, 
 			bson.M{"$set": bson.M{"hero": hero}},
 		)
@@ -36,14 +45,19 @@ func UpdateHeroProfile(hero models.HeroProfile) error {
 }
 
 func addItem(field string, item interface{}) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
 	_, err := config.Database.Collection(portfolioCollection).
-		UpdateOne(context.TODO(), bson.M{}, bson.M{"$push": bson.M{field: item}})
+		UpdateOne(ctx, bson.M{}, bson.M{"$push": bson.M{field: item}})
 	return err
 }
 
 func deleteItem(field, id string) error {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	_, err := config.Database.Collection(portfolioCollection).
-		UpdateOne(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{field: bson.M{"id": id}}})
+		UpdateOne(ctx, bson.M{}, bson.M{"$pull": bson.M{field: bson.M{"id": id}}})
 	return err
 }
 

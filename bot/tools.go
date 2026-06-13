@@ -33,12 +33,18 @@ func checkAuth(c tele.Context) bool {
 	return c.Chat().ID == expectedID
 }
 
+var apiBaseURL string
+
 func getBaseURL() (string, error) {
+	if apiBaseURL != "" {
+		return apiBaseURL, nil
+	}
 	baseURL := os.Getenv("API_BASE_URL")
 	if baseURL == "" {
 		return "", fmt.Errorf("API_BASE_URL is not set in .env")
 	}
-	return baseURL, nil
+	apiBaseURL = baseURL
+	return apiBaseURL, nil
 }
 
 func handleSpeedTest(c tele.Context) error {
@@ -52,7 +58,7 @@ func handleSpeedTest(c tele.Context) error {
 	if err != nil {
 		return c.Send(fmt.Sprintf("❌ Configuration Error: %v", err))
 	}
-	endpoints := []string{"/allairdrop", "/profilelink", "/postslink", "/cryptocommunity", "/price", "/portfolio"}
+	endpoints := []string{"/allairdrop", "/profilelink", "/postslink", "/cryptocommunity", "/price", "/portfolio", "/aitools", "/web3tools"}
 
 	results := "⚡ API Speed Test Results\n\n"
 	allNormal := true
@@ -105,10 +111,13 @@ func handleCheckMissingImages(c tele.Context) error {
 	}{
 		{"Airdrop", baseURL + "/allairdrop"},
 		{"Crypto Community", baseURL + "/cryptocommunity"},
+		{"AI Tools", baseURL + "/aitools"},
+		{"Web3 Tools", baseURL + "/web3tools"},
 	}
 
-	totalMissing := 0
-	var detailsBlocks []string
+	go func() {
+		totalMissing := 0
+		var detailsBlocks []string
 
 	for _, ep := range endpoints {
 		resp, err := http.Get(ep.URL)
@@ -119,11 +128,13 @@ func handleCheckMissingImages(c tele.Context) error {
 
 		var data struct {
 			Data []struct {
-				Name     string `json:"name"`
-				Image    string `json:"image"`
-				Logo     string `json:"logo"`
-				ImageURL string `json:"image_url"`
-				ImgURL   string `json:"img_url"`
+				Name          string `json:"name"`
+				Image         string `json:"image"`
+				Logo          string `json:"logo"`
+				ImageURL      string `json:"image_url"`
+				ImgURL        string `json:"img_url"`
+				ImageURICamel string `json:"imageUrl"`
+				ImgURICamel   string `json:"imgURL"`
 			} `json:"data"`
 		}
 
@@ -145,6 +156,12 @@ func handleCheckMissingImages(c tele.Context) error {
 			}
 			if imgURL == "" {
 				imgURL = item.ImgURL
+			}
+			if imgURL == "" {
+				imgURL = item.ImageURICamel
+			}
+			if imgURL == "" {
+				imgURL = item.ImgURICamel
 			}
 			if imgURL == "" {
 				continue
@@ -183,11 +200,14 @@ func handleCheckMissingImages(c tele.Context) error {
 		msg += "\nDetails: All images are safe!"
 	}
 
-	if len(msg) > 4000 {
-		msg = msg[:4000] + "\n... (truncated)"
-	}
+		if len(msg) > 4000 {
+			msg = msg[:4000] + "\n... (truncated)"
+		}
 
-	return c.Send(msg)
+		c.Send(msg)
+	}()
+
+	return nil
 }
 
 func handleCheckInvalidLink(c tele.Context) error {
@@ -209,10 +229,13 @@ func handleCheckInvalidLink(c tele.Context) error {
 	}{
 		{"Airdrop", baseURL + "/allairdrop"},
 		{"Crypto Community", baseURL + "/cryptocommunity"},
+		{"AI Tools", baseURL + "/aitools"},
+		{"Web3 Tools", baseURL + "/web3tools"},
 	}
 
-	totalInvalid := 0
-	var detailsBlocks []string
+	go func() {
+		totalInvalid := 0
+		var detailsBlocks []string
 
 	for _, ep := range endpoints {
 		resp, err := http.Get(ep.URL)
@@ -223,9 +246,11 @@ func handleCheckInvalidLink(c tele.Context) error {
 
 		var data struct {
 			Data []struct {
-				Name    string `json:"name"`
-				Link    string `json:"link"`
-				LinkURL string `json:"link_url"`
+				Name         string `json:"name"`
+				Link         string `json:"link"`
+				LinkURL      string `json:"link_url"`
+				Website      string `json:"website"`
+				LinkURLCamel string `json:"linkURL"`
 			} `json:"data"`
 		}
 
@@ -241,6 +266,12 @@ func handleCheckInvalidLink(c tele.Context) error {
 			link := item.Link
 			if link == "" {
 				link = item.LinkURL
+			}
+			if link == "" {
+				link = item.Website
+			}
+			if link == "" {
+				link = item.LinkURLCamel
 			}
 			if link == "" {
 				continue
@@ -287,11 +318,14 @@ func handleCheckInvalidLink(c tele.Context) error {
 		msg += "\nDetails: All links are valid!"
 	}
 
-	if len(msg) > 4000 {
-		msg = msg[:4000] + "\n... (truncated)"
-	}
+		if len(msg) > 4000 {
+			msg = msg[:4000] + "\n... (truncated)"
+		}
 
-	return c.Send(msg)
+		c.Send(msg)
+	}()
+
+	return nil
 }
 
 func handleCDNInit(c tele.Context) error {

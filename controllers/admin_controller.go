@@ -14,8 +14,8 @@ import (
 func InsertAdminHandler(c *fiber.Ctx) error {
 	var req models.Admin
 
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 
 	insertedID, err := module.InsertAdmin(req.Username, req.Password)
@@ -36,8 +36,8 @@ func LoginAdminHandler(c *fiber.Ctx) error {
 	}
 
 	var req Request
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 
 	isAuthenticated, err := module.LoginAdmin(req.Username, req.Password)
@@ -69,8 +69,8 @@ func RefreshTokenHandler(c *fiber.Ctx) error {
 	}
 
 	var req Request
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 
 	if req.RefreshToken == "" {
@@ -99,8 +99,8 @@ func LogoutHandler(c *fiber.Ctx) error {
 	}
 
 	var req Request
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 
 	if req.RefreshToken == "" {

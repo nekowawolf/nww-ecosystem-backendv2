@@ -1,7 +1,6 @@
 package module
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/nekowawolf/airdropv2/config"
@@ -10,16 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/nekowawolf/airdropv2/utils"
 )
-
-func InsertOneDocAdmin(collection string, doc interface{}) (interface{}, error) {
-	collectionRef := config.Database.Collection(collection)
-	insertResult, err := collectionRef.InsertOne(context.TODO(), doc)
-	if err != nil {
-		return nil, fmt.Errorf("InsertOneDocAdmin: %v", err)
-	}
-	return insertResult.InsertedID, nil
-}
 
 func InsertAdmin(username, password string) (interface{}, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -33,7 +24,7 @@ func InsertAdmin(username, password string) (interface{}, error) {
 		Password: string(hashedPassword),
 	}
 
-	insertedID, err := InsertOneDocAdmin("admin", newAdmin)
+	insertedID, err := InsertDocument("admin", newAdmin)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert admin: %v", err)
 	}
@@ -43,10 +34,13 @@ func InsertAdmin(username, password string) (interface{}, error) {
 }
 
 func LoginAdmin(username, password string) (bool, error) {
+	ctx, cancel := utils.GetDBContext()
+	defer cancel()
+
 	collection := config.Database.Collection("admin")
 
 	var admin models.Admin
-	err := collection.FindOne(context.TODO(), bson.M{"username": username}).Decode(&admin)
+	err := collection.FindOne(ctx, bson.M{"username": username}).Decode(&admin)
 	if err == mongo.ErrNoDocuments {
 		return false, fmt.Errorf("admin not found")
 	} else if err != nil {

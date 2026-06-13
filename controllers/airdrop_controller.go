@@ -79,12 +79,9 @@ func GetAirdropPaidHandler(c *fiber.Ctx) error {
 }
 
 func GetAllAirdropByIDHandler(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	data, err := module.GetAllAirdropByID(id)
@@ -101,12 +98,9 @@ func GetAllAirdropByIDHandler(c *fiber.Ctx) error {
 }
 
 func GetAirdropFreeByIDHandler(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	data, err := module.GetAirdropFreeByID(id)
@@ -123,12 +117,9 @@ func GetAirdropFreeByIDHandler(c *fiber.Ctx) error {
 }
 
 func GetAirdropPaidByIDHandler(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	data, err := module.GetAirdropPaidByID(id)
@@ -144,79 +135,11 @@ func GetAirdropPaidByIDHandler(c *fiber.Ctx) error {
 	})
 }
 
-func GetAllAirdropByNameHandler(c *fiber.Ctx) error {
-	name := c.Params("name")
-
-	data, err := module.GetAllAirdropByName(name)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to retrieve Airdrop by Name",
-		})
-	}
-
-	if len(data) == 0 {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "No Airdrop found with the specified name",
-		})
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Data retrieved successfully",
-		"data":    data,
-	})
-}
-
-func GetAirdropFreeByNameHandler(c *fiber.Ctx) error {
-	name := c.Params("name")
-
-	data, err := module.GetAirdropFreeByName(name)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to retrieve AirdropFree by Name",
-		})
-	}
-
-	if len(data) == 0 {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "No AirdropFree found with the specified name",
-		})
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Data retrieved successfully",
-		"data":    data,
-	})
-}
-
-func GetAirdropPaidByNameHandler(c *fiber.Ctx) error {
-	name := c.Params("name")
-
-	data, err := module.GetAirdropPaidByName(name)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to retrieve AirdropPaid by Name",
-		})
-	}
-
-	if len(data) == 0 {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "No AirdropPaid found with the specified name",
-		})
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Data retrieved successfully",
-		"data":    data,
-	})
-}
-
 func InsertAirdropFreeHandler(c *fiber.Ctx) error {
 	var reqAirdrop models.AirdropFree
 
-	if err := c.BodyParser(&reqAirdrop); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Failed to parse request body",
-		})
+	if err := utils.ParseBody(c, &reqAirdrop); err != nil {
+		return err
 	}
 
 	if reqAirdrop.Status == "" {
@@ -269,10 +192,8 @@ func InsertAirdropFreeHandler(c *fiber.Ctx) error {
 func InsertAirdropPaidHandler(c *fiber.Ctx) error {
 	var reqAirdrop models.AirdropPaid
 
-	if err := c.BodyParser(&reqAirdrop); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Failed to parse request body",
-		})
+	if err := utils.ParseBody(c, &reqAirdrop); err != nil {
+		return err
 	}
 
 	if reqAirdrop.Status == "" {
@@ -323,12 +244,9 @@ func InsertAirdropPaidHandler(c *fiber.Ctx) error {
 }
 
 func UpdateAllAirdropByIDHandler(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	var updateData struct {
@@ -354,10 +272,8 @@ func UpdateAllAirdropByIDHandler(c *fiber.Ctx) error {
 		USDIncome   int     `json:"usd_income"`
 	}
 
-	if err := c.BodyParser(&updateData); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Failed to parse request body",
-		})
+	if err := utils.ParseBody(c, &updateData); err != nil {
+		return err
 	}
 
 	currentAirdrop, err := module.GetAllAirdropByID(id)
@@ -416,12 +332,9 @@ func UpdateAllAirdropByIDHandler(c *fiber.Ctx) error {
 }
 
 func UpdateAirdropFreeByIDHandler(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	var updateData struct {
@@ -447,10 +360,8 @@ func UpdateAirdropFreeByIDHandler(c *fiber.Ctx) error {
 		USDIncome   int     `json:"usd_income"`
 	}
 
-	if err := c.BodyParser(&updateData); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Failed to parse request body",
-		})
+	if err := utils.ParseBody(c, &updateData); err != nil {
+		return err
 	}
 
 	err = module.UpdateAirdropFreeByID(
@@ -489,12 +400,9 @@ func UpdateAirdropFreeByIDHandler(c *fiber.Ctx) error {
 }
 
 func UpdateAirdropPaidByIDHandler(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	var updateData struct {
@@ -520,10 +428,8 @@ func UpdateAirdropPaidByIDHandler(c *fiber.Ctx) error {
 		USDIncome   int     `json:"usd_income"`
 	}
 
-	if err := c.BodyParser(&updateData); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Failed to parse request body",
-		})
+	if err := utils.ParseBody(c, &updateData); err != nil {
+		return err
 	}
 
 	err = module.UpdateAirdropPaidByID(
@@ -562,12 +468,9 @@ func UpdateAirdropPaidByIDHandler(c *fiber.Ctx) error {
 }
 
 func DeleteAllAirdropByIDHandler(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	err = module.DeleteAllAirdropByID(id)
@@ -584,12 +487,9 @@ func DeleteAllAirdropByIDHandler(c *fiber.Ctx) error {
 }
 
 func DeleteAirdropFreeByIDHandler(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	err = module.DeleteAirdropFreeByID(id)
@@ -606,12 +506,9 @@ func DeleteAirdropFreeByIDHandler(c *fiber.Ctx) error {
 }
 
 func DeleteAirdropPaidByIDHandler(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	err = module.DeleteAirdropPaidByID(id)

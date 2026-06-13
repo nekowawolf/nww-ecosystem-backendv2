@@ -7,7 +7,6 @@ import (
 	"github.com/nekowawolf/airdropv2/models"
 	"github.com/nekowawolf/airdropv2/module"
 	"github.com/nekowawolf/airdropv2/utils"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func invalidateCommunityCache() {
@@ -47,12 +46,9 @@ func GetCryptoCommunityStats(c *fiber.Ctx) error {
 }
 
 func GetCryptoCommunityByID(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	cryptoCommunity, err := module.GetCryptoCommunityByID(id)
@@ -68,10 +64,8 @@ func GetCryptoCommunityByID(c *fiber.Ctx) error {
 func InsertCryptoCommunity(c *fiber.Ctx) error {
 	var req models.CryptoCommunity
 
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 
 	insertedID := module.InsertCryptoCommunity(
@@ -95,43 +89,16 @@ func InsertCryptoCommunity(c *fiber.Ctx) error {
 	})
 }
 
-func GetCryptoCommunityByName(c *fiber.Ctx) error {
-    name := c.Params("name")
-    
-    data, err := module.GetCryptoCommunityByName(name)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "Failed to retrieve CryptoCommunity by Name",
-        })
-    }
-    
-    if len(data) == 0 {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "message": "No CryptoCommunity found with the specified name",
-        })
-    }
-    
-    return c.JSON(fiber.Map{
-        "message": "Data retrieved successfully",
-        "data":    data,
-    })
-}
-
 func UpdateCryptoCommunityByID(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	var req models.CryptoCommunity
 
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+	if err := utils.ParseBody(c, &req); err != nil {
+		return err
 	}
 
 	updateData := models.CryptoCommunity{
@@ -157,12 +124,9 @@ func UpdateCryptoCommunityByID(c *fiber.Ctx) error {
 }
 
 func DeleteCryptoCommunityByID(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return err
 	}
 
 	err = module.DeleteCryptoCommunityByID(id)

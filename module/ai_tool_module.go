@@ -9,50 +9,52 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InsertCryptoCommunity(name, platforms, category, imgURL, linkURL string) interface{} {
-    newCrypto := models.CryptoCommunity{
-        ID:        primitive.NewObjectID(),
-        Name:      name,
-        Platforms: platforms,
-        Category:  category,
-        ImgURL:    imgURL,
-        LinkURL:   linkURL,
+func InsertAITool(name, description string, categories []string, imgURL, website, twitter, discord, telegram string) interface{} {
+    newTool := models.AITool{
+        ID:          primitive.NewObjectID(),
+        Name:        name,
+        Description: description,
+        Categories:  categories,
+        ImgURL:      imgURL,
+        Website:     website,
+        Twitter:     twitter,
+        Discord:     discord,
+        Telegram:    telegram,
     }
 
-    insertedID, err := InsertDocument("cryptoCommunity", newCrypto)
+    insertedID, err := InsertDocument("aiTool", newTool)
     if err != nil {
         fmt.Println(err)
         return nil
     }
 
-    fmt.Printf("Inserted new crypto community with ID: %v\n", insertedID)
     return insertedID
 }
 
-func GetAllCryptoCommunity() ([]models.CryptoCommunity, error) {
+func GetAllAITool() ([]models.AITool, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
-	collection := config.Database.Collection("cryptoCommunity")
+	collection := config.Database.Collection("aiTool")
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving data: %v", err)
 	}
 	defer cursor.Close(ctx)
 
-	var communities []models.CryptoCommunity
-	if err = cursor.All(ctx, &communities); err != nil {
+	var tools []models.AITool
+	if err = cursor.All(ctx, &tools); err != nil {
 		return nil, fmt.Errorf("error decoding data: %v", err)
 	}
 
-	return communities, nil
+	return tools, nil
 }
 
-func GetCryptoCommunityStats() (map[string]interface{}, error) {
+func GetAIToolStats() (map[string]interface{}, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
-    collection := config.Database.Collection("cryptoCommunity")
+    collection := config.Database.Collection("aiTool")
 
     pipeline := bson.A{
         bson.M{
@@ -61,10 +63,8 @@ func GetCryptoCommunityStats() (map[string]interface{}, error) {
                     bson.M{"$count": "count"},
                 },
                 "categories": bson.A{
-                    bson.M{"$group": bson.M{"_id": "$category", "count": bson.M{"$sum": 1}}},
-                },
-                "platforms": bson.A{
-                    bson.M{"$group": bson.M{"_id": "$platforms", "count": bson.M{"$sum": 1}}},
+                    bson.M{"$unwind": "$categories"},
+                    bson.M{"$group": bson.M{"_id": "$categories", "count": bson.M{"$sum": 1}}},
                 },
             },
         },
@@ -84,7 +84,6 @@ func GetCryptoCommunityStats() (map[string]interface{}, error) {
     stats := map[string]interface{}{
         "total":      0,
         "categories": map[string]int{},
-        "platforms":  map[string]int{},
     }
 
     if len(results) > 0 {
@@ -113,35 +112,19 @@ func GetCryptoCommunityStats() (map[string]interface{}, error) {
             }
         }
         stats["categories"] = categories
-
-        platforms := make(map[string]int)
-        if platArr, ok := facet["platforms"].(bson.A); ok {
-            for _, item := range platArr {
-                if doc, ok := item.(bson.M); ok {
-                    key := ""
-                    if doc["_id"] != nil {
-                        key = doc["_id"].(string)
-                    }
-                    if count, ok := doc["count"].(int32); ok {
-                        platforms[key] = int(count)
-                    }
-                }
-            }
-        }
-        stats["platforms"] = platforms
     }
 
     return stats, nil
 }
 
-func GetCryptoCommunityByID(id primitive.ObjectID) (*models.CryptoCommunity, error) {
+func GetAIToolByID(id primitive.ObjectID) (*models.AITool, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
-	collection := config.Database.Collection("cryptoCommunity")
+	collection := config.Database.Collection("aiTool")
 	filter := bson.M{"_id": id}
 
-	var result models.CryptoCommunity
+	var result models.AITool
 	err := collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		return nil, err
@@ -150,19 +133,22 @@ func GetCryptoCommunityByID(id primitive.ObjectID) (*models.CryptoCommunity, err
 	return &result, nil
 }
 
-func UpdateCryptoCommunityByID(id primitive.ObjectID, updateData models.CryptoCommunity) (*models.CryptoCommunity, error) {
+func UpdateAIToolByID(id primitive.ObjectID, updateData models.AITool) (*models.AITool, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
-	collection := config.Database.Collection("cryptoCommunity")
+	collection := config.Database.Collection("aiTool")
 
 	update := bson.M{
 		"$set": bson.M{
-			"name":       updateData.Name,
-			"platforms":  updateData.Platforms,
-			"category":   updateData.Category,
-			"img_url":    updateData.ImgURL,
-			"link_url":   updateData.LinkURL,
+			"name":        updateData.Name,
+			"description": updateData.Description,
+			"categories":  updateData.Categories,
+			"imgURL":      updateData.ImgURL,
+			"website":     updateData.Website,
+			"twitter":     updateData.Twitter,
+			"discord":     updateData.Discord,
+			"telegram":    updateData.Telegram,
 		},
 	}
 
@@ -174,20 +160,20 @@ func UpdateCryptoCommunityByID(id primitive.ObjectID, updateData models.CryptoCo
 	return &updateData, nil
 }
 
-func DeleteCryptoCommunityByID(id primitive.ObjectID) error {
+func DeleteAIToolByID(id primitive.ObjectID) error {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
-    collection := config.Database.Collection("cryptoCommunity")
+    collection := config.Database.Collection("aiTool")
     filter := bson.M{"_id": id}
 
     result, err := collection.DeleteOne(ctx, filter)
     if err != nil {
-        return fmt.Errorf("error deleting crypto community for ID %s: %s", id.Hex(), err.Error())
+        return fmt.Errorf("error deleting ai tool for ID %s: %s", id.Hex(), err.Error())
     }
 
     if result.DeletedCount == 0 {
-        return fmt.Errorf("no crypto community found with ID %s", id.Hex())
+        return fmt.Errorf("no ai tool found with ID %s", id.Hex())
     }
 
     return nil
