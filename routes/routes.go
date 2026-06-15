@@ -35,6 +35,10 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/web3tools", controllers.GetAllWeb3Tools)
 	api.Get("/web3tools/stats", controllers.GetWeb3ToolStats)
 
+	// Public Github Repo routes
+	api.Get("/githubrepo", controllers.GetAllGithubRepos)
+	api.Get("/githubrepo/stats", controllers.GetGithubRepoStats)
+
 	// Public price routes	
 	api.Get("/price", controllers.PriceHandler)
 
@@ -76,6 +80,12 @@ func SetupRoutes(app *fiber.App) {
 	protected.Post("/web3tools", controllers.InsertWeb3Tools)
 	protected.Put("/web3tools/:id", controllers.UpdateWeb3ToolsByID)
 	protected.Delete("/web3tools/:id", controllers.DeleteWeb3ToolsByID)
+
+	// Protected Github Repo routes
+	protected.Get("/githubrepo/:id", controllers.GetGithubRepoByID)
+	protected.Post("/githubrepo", controllers.InsertGithubRepo)
+	protected.Put("/githubrepo/:id", controllers.UpdateGithubRepoByID)
+	protected.Delete("/githubrepo/:id", controllers.DeleteGithubRepoByID)
 
 	// Protected portfolio routes
 	protected.Put("/portfolio", controllers.UpdatePortfolio)

@@ -9,12 +9,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InsertAITools(name, description string, categories []string, imgURL, website, twitter, discord, telegram string) interface{} {
+func InsertAITools(name, description string, categories []string, videoURL, imgURL, website, twitter, discord, telegram string) interface{} {
     newTool := models.AITools{
         ID:          primitive.NewObjectID(),
         Name:        name,
         Description: description,
         Categories:  categories,
+        VideoURL:    videoURL,
         ImgURL:      imgURL,
         Website:     website,
         Twitter:     twitter,
@@ -144,6 +145,7 @@ func UpdateAIToolsByID(id primitive.ObjectID, updateData models.AITools) (*model
 			"name":        updateData.Name,
 			"description": updateData.Description,
 			"categories":  updateData.Categories,
+			"video_url":   updateData.VideoURL,
 			"imgURL":      updateData.ImgURL,
 			"website":     updateData.Website,
 			"twitter":     updateData.Twitter,

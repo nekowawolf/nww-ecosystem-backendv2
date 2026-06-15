@@ -9,13 +9,13 @@ import (
 	"github.com/nekowawolf/airdropv2/utils"
 )
 
-func invalidateAIToolsCache() {
-	utils.InvalidateCache("aitools", "aitools_stats")
+func invalidateGithubRepoCache() {
+	utils.InvalidateCache("githubrepo", "githubrepo_stats")
 }
 
-func GetAllAITools(c *fiber.Ctx) error {
-	tools, err := utils.GetOrSetCache("aitools", 24*time.Hour, func() ([]models.AITools, error) {
-		return module.GetAllAITools()
+func GetAllGithubRepos(c *fiber.Ctx) error {
+	repos, err := utils.GetOrSetCache("githubrepo", 24*time.Hour, func() ([]models.GithubRepo, error) {
+		return module.GetAllGithubRepos()
 	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -25,13 +25,13 @@ func GetAllAITools(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Data retrieved successfully",
-		"data":    tools,
+		"data":    repos,
 	})
 }
 
-func GetAIToolStats(c *fiber.Ctx) error {
-	stats, err := utils.GetOrSetCache("aitools_stats", 24*time.Hour, func() (map[string]interface{}, error) {
-		return module.GetAIToolStats()
+func GetGithubRepoStats(c *fiber.Ctx) error {
+	stats, err := utils.GetOrSetCache("githubrepo_stats", 24*time.Hour, func() (map[string]interface{}, error) {
+		return module.GetGithubRepoStats()
 	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -45,36 +45,36 @@ func GetAIToolStats(c *fiber.Ctx) error {
 	})
 }
 
-func GetAIToolsByID(c *fiber.Ctx) error {
+func GetGithubRepoByID(c *fiber.Ctx) error {
 	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
 		return err
 	}
 
-	tool, err := module.GetAIToolsByID(id)
+	repo, err := module.GetGithubRepoByID(id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "AITools not found",
+			"error": "GithubRepo not found",
 		})
 	}
 
-	return c.JSON(tool)
+	return c.JSON(repo)
 }
 
-func InsertAITools(c *fiber.Ctx) error {
-	var req models.AITools
+func InsertGithubRepo(c *fiber.Ctx) error {
+	var req models.GithubRepo
 
 	if err := utils.ParseBody(c, &req); err != nil {
 		return err
 	}
 
-	insertedID := module.InsertAITools(
+	insertedID := module.InsertGithubRepo(
 		req.Name,
 		req.Description,
-		req.Categories,
-		req.VideoURL,
-		req.ImgURL,
-		req.Website,
+		req.Category,
+		req.RepoURL,
+		req.Owner,
+		req.RepoName,
 		req.Twitter,
 		req.Discord,
 		req.Telegram,
@@ -82,70 +82,70 @@ func InsertAITools(c *fiber.Ctx) error {
 
 	if insertedID == nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to insert AITools",
+			"error": "Failed to insert GithubRepo",
 		})
 	}
 
-	invalidateAIToolsCache()
+	invalidateGithubRepoCache()
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message":    "AITools created successfully",
+		"message":    "GithubRepo created successfully",
 		"insertedID": insertedID,
 	})
 }
 
-func UpdateAIToolsByID(c *fiber.Ctx) error {
+func UpdateGithubRepoByID(c *fiber.Ctx) error {
 	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
 		return err
 	}
 
-	var req models.AITools
+	var req models.GithubRepo
 
 	if err := utils.ParseBody(c, &req); err != nil {
 		return err
 	}
 
-	updateData := models.AITools{
+	updateData := models.GithubRepo{
 		Name:        req.Name,
 		Description: req.Description,
-		Categories:  req.Categories,
-		VideoURL:    req.VideoURL,
-		ImgURL:      req.ImgURL,
-		Website:     req.Website,
+		Category:    req.Category,
+		RepoURL:     req.RepoURL,
+		Owner:       req.Owner,
+		RepoName:    req.RepoName,
 		Twitter:     req.Twitter,
 		Discord:     req.Discord,
 		Telegram:    req.Telegram,
 	}
 
-	updatedTool, err := module.UpdateAIToolsByID(id, updateData)
+	updatedRepo, err := module.UpdateGithubRepoByID(id, updateData)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "AITools not found or could not be updated",
+			"error": "GithubRepo not found or could not be updated",
 		})
 	}
 
-	invalidateAIToolsCache()
+	invalidateGithubRepoCache()
 	return c.JSON(fiber.Map{
-		"message": "AITools updated successfully",
-		"data":    updatedTool,
+		"message": "GithubRepo updated successfully",
+		"data":    updatedRepo,
 	})
 }
 
-func DeleteAIToolsByID(c *fiber.Ctx) error {
+func DeleteGithubRepoByID(c *fiber.Ctx) error {
 	id, err := utils.ParseObjectID(c, "id")
 	if err != nil {
 		return err
 	}
 
-	err = module.DeleteAIToolsByID(id)
+	err = module.DeleteGithubRepoByID(id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	invalidateAIToolsCache()
+	invalidateGithubRepoCache()
 	return c.JSON(fiber.Map{
-		"message": "AITools deleted successfully",
+		"message": "GithubRepo deleted successfully",
 	})
 }

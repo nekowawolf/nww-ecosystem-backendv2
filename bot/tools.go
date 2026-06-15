@@ -58,7 +58,7 @@ func handleSpeedTest(c tele.Context) error {
 	if err != nil {
 		return c.Send(fmt.Sprintf("❌ Configuration Error: %v", err))
 	}
-	endpoints := []string{"/allairdrop", "/profilelink", "/postslink", "/cryptocommunity", "/price", "/portfolio", "/aitools", "/web3tools"}
+	endpoints := []string{"/allairdrop", "/profilelink", "/postslink", "/cryptocommunity", "/price", "/portfolio", "/aitools", "/web3tools", "/githubrepo"}
 
 	results := "⚡ API Speed Test Results\n\n"
 	allNormal := true
@@ -231,6 +231,7 @@ func handleCheckInvalidLink(c tele.Context) error {
 		{"Crypto Community", baseURL + "/cryptocommunity"},
 		{"AI Tools", baseURL + "/aitools"},
 		{"Web3 Tools", baseURL + "/web3tools"},
+		{"Github Repo", baseURL + "/githubrepo"},
 	}
 
 	go func() {
@@ -251,6 +252,14 @@ func handleCheckInvalidLink(c tele.Context) error {
 				LinkURL      string `json:"link_url"`
 				Website      string `json:"website"`
 				LinkURLCamel string `json:"linkURL"`
+				RepoURL      string `json:"repo_url"`
+				Twitter      string `json:"twitter"`
+				Discord      string `json:"discord"`
+				Telegram     string `json:"telegram"`
+				LinkTwitter  string `json:"link_twitter"`
+				LinkDiscord  string `json:"link_discord"`
+				LinkTelegram string `json:"link_telegram"`
+				LinkClaim    string `json:"link_claim"`
 			} `json:"data"`
 		}
 
@@ -263,44 +272,63 @@ func handleCheckInvalidLink(c tele.Context) error {
 
 		var blockDetails string
 		for _, item := range data.Data {
-			link := item.Link
-			if link == "" {
-				link = item.LinkURL
+			primaryLink := item.Link
+			if primaryLink == "" {
+				primaryLink = item.LinkURL
 			}
-			if link == "" {
-				link = item.Website
+			if primaryLink == "" {
+				primaryLink = item.Website
 			}
-			if link == "" {
-				link = item.LinkURLCamel
-			}
-			if link == "" {
-				continue
+			if primaryLink == "" {
+				primaryLink = item.LinkURLCamel
 			}
 
-			// Validate URL format
-			parsedURL, err := url.ParseRequestURI(link)
-			if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
-				totalInvalid++
-				blockDetails += fmt.Sprintf("- Name: \"%s\" (Invalid format: %s)\n", item.Name, link)
-				continue
+			linksToCheck := []struct {
+				Name string
+				URL  string
+			}{
+				{"Primary", primaryLink},
+				{"Repo", item.RepoURL},
+				{"Twitter", item.Twitter},
+				{"Discord", item.Discord},
+				{"Telegram", item.Telegram},
+				{"Twitter", item.LinkTwitter},
+				{"Discord", item.LinkDiscord},
+				{"Telegram", item.LinkTelegram},
+				{"Claim", item.LinkClaim},
 			}
 
-			// Ping the link
-			req, err := http.NewRequest("GET", link, nil)
-			if err != nil {
-				continue
-			}
-			req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-			
-			client := &http.Client{Timeout: 10 * time.Second}
-			linkResp, err := client.Do(req)
+			for _, l := range linksToCheck {
+				link := l.URL
+				if link == "" {
+					continue
+				}
 
-			if err != nil || linkResp.StatusCode >= 400 {
-				totalInvalid++
-				blockDetails += fmt.Sprintf("- Name: \"%s\" (Link: %s)\n", item.Name, link)
-			}
-			if linkResp != nil {
-				linkResp.Body.Close()
+				// Validate URL format
+				parsedURL, err := url.ParseRequestURI(link)
+				if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
+					totalInvalid++
+					blockDetails += fmt.Sprintf("- Name: \"%s\" (Invalid %s format: %s)\n", item.Name, l.Name, link)
+					continue
+				}
+
+				// Ping the link
+				req, err := http.NewRequest("GET", link, nil)
+				if err != nil {
+					continue
+				}
+				req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+				
+				client := &http.Client{Timeout: 10 * time.Second}
+				linkResp, err := client.Do(req)
+
+				if err != nil || linkResp.StatusCode >= 400 {
+					totalInvalid++
+					blockDetails += fmt.Sprintf("- Name: \"%s\" (%s Link: %s)\n", item.Name, l.Name, link)
+				}
+				if linkResp != nil {
+					linkResp.Body.Close()
+				}
 			}
 		}
 
