@@ -12,12 +12,12 @@ import (
 
 func PriceHandler(c *fiber.Ctx) error {
 	coins := map[string]string{
-		"btc":   "https://api.alternative.me/v1/ticker/bitcoin/",
-		"eth":   "https://api.alternative.me/v1/ticker/ethereum/",
-		"sol":   "https://api.alternative.me/v1/ticker/solana/",
-		"bnb":   "https://api.alternative.me/v1/ticker/binancecoin/",
-		"matic": "https://api.alternative.me/v1/ticker/matic-network/",
-		"xrp":   "https://api.alternative.me/v1/ticker/ripple/",
+		"btc":   "https://api.alternative.me/v2/ticker/bitcoin/",
+		"eth":   "https://api.alternative.me/v2/ticker/ethereum/",
+		"sol":   "https://api.alternative.me/v2/ticker/solana/",
+		"bnb":   "https://api.alternative.me/v2/ticker/binancecoin/",
+		"matic": "https://api.alternative.me/v2/ticker/matic-network/",
+		"xrp":   "https://api.alternative.me/v2/ticker/ripple/",
 	}
 
 	results := make(map[string]interface{})

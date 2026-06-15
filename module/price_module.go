@@ -21,14 +21,14 @@ func GetPrice(url string) (*models.CryptoData, error) {
 		return nil, err
 	}
 
-	var data []models.CryptoData
-	err = json.Unmarshal(body, &data)
+	var response models.CryptoResponse
+	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(data) > 0 {
-		return &data[0], nil
+	for _, v := range response.Data {
+		return &v, nil
 	}
 
 	return nil, fmt.Errorf("data not found")
