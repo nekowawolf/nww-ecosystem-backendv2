@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,20 +22,31 @@ func PriceHandler(c *fiber.Ctx) error {
 	}
 
 	results := make(map[string]interface{})
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 
 	for key, url := range coins {
-		currentURL := url
-		data, err := utils.GetOrSetCache("price:"+key, 5*time.Minute, func() (*models.CryptoData, error) {
-			return module.GetPrice(currentURL)
-		})
-		
-		if err != nil {
-			log.Println("Error fetching price for", key, ":", err)
-			results[key] = "Error"
-		} else {
-			results[key] = data
-		}
+		wg.Add(1)
+		go func(k string, u string) {
+			defer wg.Done()
+			
+			data, err := utils.GetOrSetCache("price:"+k, 5*time.Minute, func() (*models.CryptoData, error) {
+				return module.GetPrice(u)
+			})
+			
+			mu.Lock()
+			defer mu.Unlock()
+			
+			if err != nil {
+				log.Println("Error fetching price for", k, ":", err)
+				results[k] = "Error"
+			} else {
+				results[k] = data
+			}
+		}(key, url)
 	}
+
+	wg.Wait()
 
 	return c.JSON(results)
 }
