@@ -14,6 +14,7 @@ var origins = []string{
     "https://link.nekowawolf.xyz",
     "https://web3.nekowawolf.xyz",
     "https://admin.nekowawolf.xyz",
+    "https://github.nekowawolf.xyz",
     "https://nekowawolf.github.io",
     "https://airdrop.nekowawolf.xyz",
     "https://portfolio.nekowawolf.xyz",
