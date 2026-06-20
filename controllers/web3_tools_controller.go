@@ -76,6 +76,7 @@ func InsertWeb3Tools(c *fiber.Ctx) error {
 		req.ImageURL,
 		req.Website,
 		req.Twitter,
+		req.Instagram,
 		req.Discord,
 		req.Telegram,
 	)
@@ -113,6 +114,7 @@ func UpdateWeb3ToolsByID(c *fiber.Ctx) error {
 		ImageURL:    req.ImageURL,
 		Website:     req.Website,
 		Twitter:     req.Twitter,
+		Instagram:   req.Instagram,
 		Discord:     req.Discord,
 		Telegram:    req.Telegram,
 	}

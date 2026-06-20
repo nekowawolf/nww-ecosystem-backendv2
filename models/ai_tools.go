@@ -13,6 +13,7 @@ type AITools struct {
 	ImgURL      string             `bson:"imgURL,omitempty" json:"imgURL,omitempty"`
 	Website     string             `bson:"website,omitempty" json:"website,omitempty"`
 	Twitter     string             `bson:"twitter,omitempty" json:"twitter,omitempty"`
+	Instagram   string             `bson:"instagram,omitempty" json:"instagram,omitempty"`
 	Discord     string             `bson:"discord,omitempty" json:"discord,omitempty"`
 	Telegram    string             `bson:"telegram,omitempty" json:"telegram,omitempty"`
 }

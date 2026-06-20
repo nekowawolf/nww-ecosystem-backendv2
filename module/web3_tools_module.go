@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InsertWeb3Tools(name, description, category string, chains []string, imageUrl, website, twitter, discord, telegram string) interface{} {
+func InsertWeb3Tools(name, description, category string, chains []string, imageUrl, website, twitter, instagram, discord, telegram string) interface{} {
     newTool := models.Web3Tools{
         ID:          primitive.NewObjectID(),
         Name:        name,
@@ -19,6 +19,7 @@ func InsertWeb3Tools(name, description, category string, chains []string, imageU
         ImageURL:    imageUrl,
         Website:     website,
         Twitter:     twitter,
+        Instagram:   instagram,
         Discord:     discord,
         Telegram:    telegram,
     }
@@ -169,6 +170,7 @@ func UpdateWeb3ToolsByID(id primitive.ObjectID, updateData models.Web3Tools) (*m
 			"imageUrl":    updateData.ImageURL,
 			"website":     updateData.Website,
 			"twitter":     updateData.Twitter,
+			"instagram":   updateData.Instagram,
 			"discord":     updateData.Discord,
 			"telegram":    updateData.Telegram,
 		},

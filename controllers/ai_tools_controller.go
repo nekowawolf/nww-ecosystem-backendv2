@@ -76,6 +76,7 @@ func InsertAITools(c *fiber.Ctx) error {
 		req.ImgURL,
 		req.Website,
 		req.Twitter,
+		req.Instagram,
 		req.Discord,
 		req.Telegram,
 	)
@@ -113,6 +114,7 @@ func UpdateAIToolsByID(c *fiber.Ctx) error {
 		ImgURL:      req.ImgURL,
 		Website:     req.Website,
 		Twitter:     req.Twitter,
+		Instagram:   req.Instagram,
 		Discord:     req.Discord,
 		Telegram:    req.Telegram,
 	}

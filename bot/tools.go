@@ -260,6 +260,8 @@ func handleCheckInvalidLink(c tele.Context) error {
 				LinkDiscord  string `json:"link_discord"`
 				LinkTelegram string `json:"link_telegram"`
 				LinkClaim    string `json:"link_claim"`
+				VideoURL     string `json:"video_url"`
+				Instagram    string `json:"instagram"`
 			} `json:"data"`
 		}
 
@@ -296,6 +298,8 @@ func handleCheckInvalidLink(c tele.Context) error {
 				{"Discord", item.LinkDiscord},
 				{"Telegram", item.LinkTelegram},
 				{"Claim", item.LinkClaim},
+				{"Video", item.VideoURL},
+				{"Instagram", item.Instagram},
 			}
 
 			for _, l := range linksToCheck {

@@ -76,6 +76,7 @@ func InsertGithubRepo(c *fiber.Ctx) error {
 		req.Owner,
 		req.RepoName,
 		req.Twitter,
+		req.Instagram,
 		req.Discord,
 		req.Telegram,
 	)
@@ -113,6 +114,7 @@ func UpdateGithubRepoByID(c *fiber.Ctx) error {
 		Owner:       req.Owner,
 		RepoName:    req.RepoName,
 		Twitter:     req.Twitter,
+		Instagram:   req.Instagram,
 		Discord:     req.Discord,
 		Telegram:    req.Telegram,
 	}

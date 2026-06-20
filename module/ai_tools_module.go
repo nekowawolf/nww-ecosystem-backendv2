@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InsertAITools(name, description string, categories []string, videoURL, imgURL, website, twitter, discord, telegram string) interface{} {
+func InsertAITools(name, description string, categories []string, videoURL, imgURL, website, twitter, instagram, discord, telegram string) interface{} {
     newTool := models.AITools{
         ID:          primitive.NewObjectID(),
         Name:        name,
@@ -19,6 +19,7 @@ func InsertAITools(name, description string, categories []string, videoURL, imgU
         ImgURL:      imgURL,
         Website:     website,
         Twitter:     twitter,
+        Instagram:   instagram,
         Discord:     discord,
         Telegram:    telegram,
     }
@@ -149,6 +150,7 @@ func UpdateAIToolsByID(id primitive.ObjectID, updateData models.AITools) (*model
 			"imgURL":      updateData.ImgURL,
 			"website":     updateData.Website,
 			"twitter":     updateData.Twitter,
+			"instagram":   updateData.Instagram,
 			"discord":     updateData.Discord,
 			"telegram":    updateData.Telegram,
 		},
