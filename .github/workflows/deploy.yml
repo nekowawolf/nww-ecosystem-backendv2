@@ -19,7 +19,7 @@ jobs:
           script: |
             set -e
 
-            cd ~/airdropv2-backend
+            cd ~/nww-ecosystem-backendv2
 
             echo "Fetching latest code..."
             git fetch origin
@@ -28,8 +28,8 @@ jobs:
             git reset --hard origin/main
 
             echo "Rebuilding containers..."
-            docker-compose down
-            docker-compose up -d --build
+            docker compose down
+            docker compose up -d --build
 
             echo "Cleaning unused Docker resources..."
             docker image prune -f
