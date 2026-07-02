@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InsertGithubRepo(name, description, category, repoURL, owner, repoName, twitter, instagram, discord, telegram string) interface{} {
+func InsertGithubRepo(name, description, category, repoURL, owner, repoName, website, twitter, instagram, discord, telegram string) interface{} {
 	newRepo := models.GithubRepo{
 		ID:          primitive.NewObjectID(),
 		Name:        name,
@@ -18,6 +18,7 @@ func InsertGithubRepo(name, description, category, repoURL, owner, repoName, twi
 		RepoURL:     repoURL,
 		Owner:       owner,
 		RepoName:    repoName,
+		Website:     website,
 		Twitter:     twitter,
 		Instagram:   instagram,
 		Discord:     discord,
@@ -148,6 +149,7 @@ func UpdateGithubRepoByID(id primitive.ObjectID, updateData models.GithubRepo) (
 			"repo_url":    updateData.RepoURL,
 			"owner":       updateData.Owner,
 			"repo_name":   updateData.RepoName,
+			"website":     updateData.Website,
 			"twitter":     updateData.Twitter,
 			"instagram":   updateData.Instagram,
 			"discord":     updateData.Discord,

@@ -117,4 +117,11 @@ func SetupRoutes(app *fiber.App) {
 	protected.Put("/postslink/:id", controllers.UpdatePost)
 	protected.Put("/profilelink", controllers.UpdateProfile)
 	protected.Delete("/postslink/:id", controllers.DeletePost)
+
+	// Protected Note routes
+	protected.Get("/notes", controllers.GetAllNotes)
+	protected.Get("/notes/:id", controllers.GetNoteByID)
+	protected.Post("/notes", controllers.InsertNote)
+	protected.Put("/notes/:id", controllers.UpdateNoteByID)
+	protected.Delete("/notes/:id", controllers.DeleteNoteByID)
 }

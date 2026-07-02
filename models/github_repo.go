@@ -12,6 +12,7 @@ type GithubRepo struct {
 	RepoURL     string             `bson:"repo_url,omitempty" json:"repo_url,omitempty"`
 	Owner       string             `bson:"owner,omitempty" json:"owner,omitempty"`
 	RepoName    string             `bson:"repo_name,omitempty" json:"repo_name,omitempty"`
+	Website     string             `bson:"website,omitempty" json:"website,omitempty"`
 	Twitter     string             `bson:"twitter,omitempty" json:"twitter,omitempty"`
 	Instagram   string             `bson:"instagram,omitempty" json:"instagram,omitempty"`
 	Discord     string             `bson:"discord,omitempty" json:"discord,omitempty"`
