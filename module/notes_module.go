@@ -13,7 +13,7 @@ import (
 )
 
 func InsertNote(title, content, noteType string) interface{} {
-	newNote := models.Note{
+	newNote := models.Notes{
 		ID:        primitive.NewObjectID(),
 		Title:     title,
 		Content:   content,
@@ -30,7 +30,7 @@ func InsertNote(title, content, noteType string) interface{} {
 	return insertedID
 }
 
-func GetAllNotes() ([]models.Note, error) {
+func GetAllNotes() ([]models.Notes, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
@@ -44,7 +44,7 @@ func GetAllNotes() ([]models.Note, error) {
 	}
 	defer cursor.Close(ctx)
 
-	var notes []models.Note
+	var notes []models.Notes
 	if err = cursor.All(ctx, &notes); err != nil {
 		return nil, fmt.Errorf("error decoding data: %v", err)
 	}
@@ -52,14 +52,14 @@ func GetAllNotes() ([]models.Note, error) {
 	return notes, nil
 }
 
-func GetNoteByID(id primitive.ObjectID) (*models.Note, error) {
+func GetNoteByID(id primitive.ObjectID) (*models.Notes, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 
 	collection := config.Database.Collection("notes")
 	filter := bson.M{"_id": id}
 
-	var result models.Note
+	var result models.Notes
 	err := collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func GetNoteByID(id primitive.ObjectID) (*models.Note, error) {
 	return &result, nil
 }
 
-func UpdateNoteByID(id primitive.ObjectID, updateData models.Note) (*models.Note, error) {
+func UpdateNoteByID(id primitive.ObjectID, updateData models.Notes) (*models.Notes, error) {
 	ctx, cancel := utils.GetDBContext()
 	defer cancel()
 

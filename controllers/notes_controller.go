@@ -38,7 +38,7 @@ func GetNoteByID(c *fiber.Ctx) error {
 }
 
 func InsertNote(c *fiber.Ctx) error {
-	var req models.Note
+	var req models.Notes
 
 	if err := utils.ParseBody(c, &req); err != nil {
 		return err
@@ -68,13 +68,13 @@ func UpdateNoteByID(c *fiber.Ctx) error {
 		return err
 	}
 
-	var req models.Note
+	var req models.Notes
 
 	if err := utils.ParseBody(c, &req); err != nil {
 		return err
 	}
 
-	updateData := models.Note{
+	updateData := models.Notes{
 		Title:   req.Title,
 		Content: req.Content,
 		Type:    req.Type,

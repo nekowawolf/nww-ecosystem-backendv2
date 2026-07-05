@@ -33,6 +33,16 @@ func InitBot() {
 	}
 	TelegramBot = b
 
+	// Security Middleware
+	b.Use(func(next tele.HandlerFunc) tele.HandlerFunc {
+		return func(c tele.Context) error {
+			if !checkAuth(c) {
+				return c.Send("❌ Unauthorized access.")
+			}
+			return next(c)
+		}
+	})
+
 	menu := &tele.ReplyMarkup{}
 	btnBackup := menu.Data("📦 Backup", "btn_backup")
 	btnStatus := menu.Data("📊 Status", "btn_status")
