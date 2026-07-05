@@ -75,6 +75,7 @@ func InitBot() {
 	btnCDN := webToolsMenu.Data("🖼️ CDN GitHub", "btn_cdn_github")
 	btnMissingImages := webToolsMenu.Data("🔍 Check Missing Images", "btn_missing_images")
 	btnCheckInvalidLink := webToolsMenu.Data("🔗 Check Invalid Link", "btn_check_invalid_link")
+	btnNotes := webToolsMenu.Data("📝 Notes", "btn_notes")
 	btnWebToolsBack := webToolsMenu.Data("🔙 Back", "btn_web_tools_back")
 
 	webToolsMenu.Inline(
@@ -82,6 +83,7 @@ func InitBot() {
 		webToolsMenu.Row(btnCDN),
 		webToolsMenu.Row(btnMissingImages),
 		webToolsMenu.Row(btnCheckInvalidLink),
+		webToolsMenu.Row(btnNotes),
 		webToolsMenu.Row(btnWebToolsBack),
 	)
 
@@ -171,6 +173,19 @@ func InitBot() {
 	b.Handle(&btnCDN, handleCDNInit)
 	b.Handle(&btnMissingImages, handleCheckMissingImages)
 	b.Handle(&btnCheckInvalidLink, handleCheckInvalidLink)
+	
+	RegisterNotesHandlers(b, webToolsMenu)
+
+	// Catch text for Notes
+	b.Handle(tele.OnText, func(c tele.Context) error {
+		handled, err := CheckNotesText(c)
+		if handled {
+			return err
+		}
+		return nil
+	})
+
+	// Dynamic callbacks for notes are now handled natively via \f prefixes
 
 	// Catch photos for CDN upload
 	b.Handle(tele.OnPhoto, handlePhotoUpload)
@@ -178,6 +193,14 @@ func InitBot() {
 	// Commands
 	b.Handle("/backup", handleBackup)
 	b.Handle("/status", handleStatus)
+	b.Handle("/fullinfo", func(c tele.Context) error {
+		if !checkAuth(c) {
+			return c.Send("❌ Unauthorized access.")
+		}
+		return c.Send(GetFullInfo(), serverMenu)
+	})
+	b.Handle("/speedtest", handleSpeedTest)
+	b.Handle("/notes", handleNotesMenu)
 
 	go b.Start()
 	log.Println("Telegram bot is running")
