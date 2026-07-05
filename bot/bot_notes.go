@@ -25,6 +25,7 @@ var (
 	notesMenu = &tele.ReplyMarkup{}
 	btnAddNote = notesMenu.Data("➕ Add Note", "btn_add_note")
 	btnViewNotes = notesMenu.Data("📋 View Notes", "btn_view_notes")
+	btnManageNotes = notesMenu.Data("⚙️ Manage Notes", "btn_manage_notes")
 	btnNotesBack = notesMenu.Data("🔙 Back to Web Tools", "btn_notes_back")
 	btnBackToNotes = notesMenu.Data("⬅️ Back to Notes", "btn_back_to_notes_menu")
 
@@ -41,6 +42,7 @@ var (
 func init() {
 	notesMenu.Inline(
 		notesMenu.Row(btnAddNote, btnViewNotes),
+		notesMenu.Row(btnManageNotes),
 		notesMenu.Row(btnNotesBack),
 	)
 
@@ -139,24 +141,30 @@ func getMonthName(month int) string {
 	return "Unknown"
 }
 
-func handleViewNotesCategory(c tele.Context) error {
+func handleViewNotesCategory(c tele.Context, mode string) error {
 	c.Respond()
 	menu := &tele.ReplyMarkup{}
-	btnAll := menu.Data("📑 All", "vyr", "all")
-	btnJournal := menu.Data("📓 Journal", "vyr", "journal")
-	btnIdea := menu.Data("💡 Idea", "vyr", "idea")
-	btnTask := menu.Data("✅ Task", "vyr", "task")
+	prefix := "v"
+	if mode == "manage" { prefix = "m" }
+	
+	btnAll := menu.Data("📑 All", prefix+"yr", "all")
+	btnJournal := menu.Data("📓 Journal", prefix+"yr", "journal")
+	btnIdea := menu.Data("💡 Idea", prefix+"yr", "idea")
+	btnTask := menu.Data("✅ Task", prefix+"yr", "task")
 	menu.Inline(menu.Row(btnAll, btnJournal), menu.Row(btnIdea, btnTask), menu.Row(btnBackToNotes))
+	
 	msg := "📅 *Notes Archive*\n\nPlease select a category to view your notes:"
+	if mode == "manage" {
+		msg = "⚙️ *Manage Notes*\n\nPlease select a category to manage your notes:"
+	}
 	return c.Edit(msg, menu, tele.ModeMarkdown)
 }
 
-func handleViewNotesYears(c tele.Context, category string) error {
-	c.Respond()
+func handleViewNotesYears(c tele.Context, category string, mode string, isNewMessage bool) error {
+	if !isNewMessage { c.Respond() }
+	
 	filter := bson.M{}
-	if category != "all" {
-		filter["type"] = category
-	}
+	if category != "all" { filter["type"] = category }
 	pipeline := mongo.Pipeline{
 		{{"$match", filter}},
 		{{"$project", bson.D{{"year", bson.D{{"$year", "$created_at"}}}}}},
@@ -170,11 +178,18 @@ func handleViewNotesYears(c tele.Context, category string) error {
 	cursor.All(context.Background(), &results)
 
 	if len(results) == 0 {
-		return c.Edit("📝 No notes found for this category.", notesMenu)
+		msg := "📝 No notes found for this category."
+		if isNewMessage { return c.Send(msg) }
+		return c.Edit(msg, notesMenu)
 	}
 
+	prefix := "v"
+	if mode == "manage" { prefix = "m" }
+
 	menu := &tele.ReplyMarkup{}
-	btnViewAll := menu.Data(fmt.Sprintf("📄 View All %s", strings.Title(category)), "vlist", category)
+	btnText := fmt.Sprintf("📄 View All %s", strings.Title(category))
+	if category == "all" { btnText = "📄 View All Notes" }
+	btnViewAll := menu.Data(btnText, prefix+"list", category)
 	var rows []tele.Row
 	rows = append(rows, menu.Row(btnViewAll))
 
@@ -184,19 +199,28 @@ func handleViewNotesYears(c tele.Context, category string) error {
 		if !ok { continue }
 		count := res["count"].(int32)
 		btnText := fmt.Sprintf("%d (%d Notes)", year, count)
-		btn := menu.Data(btnText, "vmo", fmt.Sprintf("%s_%d", category, year))
+		btn := menu.Data(btnText, prefix+"mo", fmt.Sprintf("%s_%d", category, year))
 		buttons = append(buttons, btn)
 		if len(buttons) == 2 || i == len(results)-1 {
 			rows = append(rows, menu.Row(buttons...))
 			buttons = []tele.Btn{}
 		}
 	}
-	rows = append(rows, menu.Row(menu.Data("🔙 Back to Categories", "btn_view_notes", "back")))
+	
+	backBtnTarget := "vcat"
+	if mode == "manage" { backBtnTarget = "mcat" }
+	rows = append(rows, menu.Row(menu.Data("🔙 Back to Categories", backBtnTarget, "back")))
 	menu.Inline(rows...)
-	return c.Edit(fmt.Sprintf("📅 *%s Notes*\n\nPlease select a year:", strings.Title(category)), menu, tele.ModeMarkdown)
+	
+	titleStr := "📅 *%s Notes*\n\nPlease select a year:"
+	if mode == "manage" { titleStr = "⚙️ *Manage %s Notes*\n\nPlease select a year:" }
+	
+	msg := fmt.Sprintf(titleStr, strings.Title(category))
+	if isNewMessage { return c.Send(msg, menu, tele.ModeMarkdown) }
+	return c.Edit(msg, menu, tele.ModeMarkdown)
 }
 
-func handleViewNotesMonths(c tele.Context, data string) error {
+func handleViewNotesMonths(c tele.Context, data string, mode string) error {
 	c.Respond()
 	parts := strings.Split(data, "_")
 	if len(parts) != 2 { return c.Send("❌ Error") }
@@ -219,8 +243,11 @@ func handleViewNotesMonths(c tele.Context, data string) error {
 	var results []bson.M
 	cursor.All(context.Background(), &results)
 
+	prefix := "v"
+	if mode == "manage" { prefix = "m" }
+
 	menu := &tele.ReplyMarkup{}
-	btnViewAll := menu.Data(fmt.Sprintf("📄 View All %d", year), "vlist", data)
+	btnViewAll := menu.Data(fmt.Sprintf("📄 View All %d", year), prefix+"list", data)
 	var rows []tele.Row
 	rows = append(rows, menu.Row(btnViewAll))
 
@@ -230,19 +257,23 @@ func handleViewNotesMonths(c tele.Context, data string) error {
 		if !ok { continue }
 		count := res["count"].(int32)
 		btnText := fmt.Sprintf("%s (%d)", getMonthName(int(month)), count)
-		btn := menu.Data(btnText, "vdt", fmt.Sprintf("%s_%d_%d", category, year, month))
+		btn := menu.Data(btnText, prefix+"dt", fmt.Sprintf("%s_%d_%d", category, year, month))
 		buttons = append(buttons, btn)
 		if len(buttons) == 2 || i == len(results)-1 {
 			rows = append(rows, menu.Row(buttons...))
 			buttons = []tele.Btn{}
 		}
 	}
-	rows = append(rows, menu.Row(menu.Data("🔙 Back to Years", "vyr", category)))
+	rows = append(rows, menu.Row(menu.Data("🔙 Back to Years", prefix+"yr", category)))
 	menu.Inline(rows...)
-	return c.Edit(fmt.Sprintf("📅 *%s Notes - %d*\n\nPlease select a month:", strings.Title(category), year), menu, tele.ModeMarkdown)
+	
+	titleStr := "📅 *%s Notes - %d*\n\nPlease select a month:"
+	if mode == "manage" { titleStr = "⚙️ *Manage %s Notes - %d*\n\nPlease select a month:" }
+	
+	return c.Edit(fmt.Sprintf(titleStr, strings.Title(category), year), menu, tele.ModeMarkdown)
 }
 
-func handleViewNotesDates(c tele.Context, data string) error {
+func handleViewNotesDates(c tele.Context, data string, mode string) error {
 	c.Respond()
 	parts := strings.Split(data, "_")
 	if len(parts) != 3 { return c.Send("❌ Error") }
@@ -266,8 +297,11 @@ func handleViewNotesDates(c tele.Context, data string) error {
 	var results []bson.M
 	cursor.All(context.Background(), &results)
 
+	prefix := "v"
+	if mode == "manage" { prefix = "m" }
+
 	menu := &tele.ReplyMarkup{}
-	btnViewAll := menu.Data(fmt.Sprintf("📄 View All %s %d", getMonthName(month), year), "vlist", data)
+	btnViewAll := menu.Data(fmt.Sprintf("📄 View All %s %d", getMonthName(month), year), prefix+"list", data)
 	var rows []tele.Row
 	rows = append(rows, menu.Row(btnViewAll))
 
@@ -276,20 +310,24 @@ func handleViewNotesDates(c tele.Context, data string) error {
 		day, ok := res["_id"].(int32)
 		if !ok { continue }
 		btnText := fmt.Sprintf("Day %02d", day)
-		btn := menu.Data(btnText, "vlist", fmt.Sprintf("%s_%d_%d_%d", category, year, month, day))
+		btn := menu.Data(btnText, prefix+"list", fmt.Sprintf("%s_%d_%d_%d", category, year, month, day))
 		buttons = append(buttons, btn)
 		if len(buttons) == 3 || i == len(results)-1 {
 			rows = append(rows, menu.Row(buttons...))
 			buttons = []tele.Btn{}
 		}
 	}
-	rows = append(rows, menu.Row(menu.Data("🔙 Back to Months", "vmo", fmt.Sprintf("%s_%d", category, year))))
+	rows = append(rows, menu.Row(menu.Data("🔙 Back to Months", prefix+"mo", fmt.Sprintf("%s_%d", category, year))))
 	menu.Inline(rows...)
-	return c.Edit(fmt.Sprintf("📅 *%s Notes - %s %d*\n\nPlease select a date:", strings.Title(category), getMonthName(month), year), menu, tele.ModeMarkdown)
+	
+	titleStr := "📅 *%s Notes - %s %d*\n\nPlease select a date:"
+	if mode == "manage" { titleStr = "⚙️ *Manage %s Notes - %s %d*\n\nPlease select a date:" }
+	
+	return c.Edit(fmt.Sprintf(titleStr, strings.Title(category), getMonthName(month), year), menu, tele.ModeMarkdown)
 }
 
-func handleViewNotesStaticList(c tele.Context, data string) error {
-	c.Respond()
+func handleViewNotesStaticList(c tele.Context, data string, mode string, isNewMessage bool) error {
+	if !isNewMessage { c.Respond() }
 	parts := strings.Split(data, "_")
 	category := parts[0]
 	filter := bson.M{}
@@ -322,106 +360,128 @@ func handleViewNotesStaticList(c tele.Context, data string) error {
 		titleMsg = fmt.Sprintf("📑 *%s Notes - %02d %s %d*", strings.Title(category), day, getMonthName(month), year)
 	}
 
-	opts := options.Find().SetSort(bson.D{{"created_at", 1}})
+	opts := options.Find().SetSort(bson.D{{"created_at", -1}})
 	cursor, _ := config.Database.Collection("notes").Find(context.Background(), filter, opts)
 	defer cursor.Close(context.Background())
 	var notes []models.Notes
 	cursor.All(context.Background(), &notes)
 
 	if len(notes) == 0 {
-		return c.Send("📝 No notes found.")
+		msg := "📝 No notes found."
+		if isNewMessage { return c.Send(msg) }
+		return c.Edit(msg, notesMenu)
 	}
-
-	var sb strings.Builder
-	sb.WriteString(titleMsg + "\n════════════════\n\n")
-
-	var currentIds []primitive.ObjectID
-	wib := time.FixedZone("WIB", 7*3600)
-
-	for i, note := range notes {
-		currentIds = append(currentIds, note.ID)
-
-		icon := "📝"
-		if note.Type == "journal" { icon = "📓" }
-		if note.Type == "idea" { icon = "💡" }
-		if note.Type == "task" { icon = "✅" }
-
-		timeStr := note.CreatedAt.In(wib).Format("02 Jan 06 15:04 WIB")
-		noteBlock := fmt.Sprintf("%d. %s *%s* — %s\n> %s\n\n", i+1, icon, note.Title, timeStr, note.Content)
-		if sb.Len()+len(noteBlock) > 3800 {
-			sb.WriteString("_... (truncated)_\n")
-			break
-		}
-		sb.WriteString(noteBlock)
-	}
-
-	userNotesContext[c.Chat().ID] = currentIds
 
 	menu := &tele.ReplyMarkup{}
-	btnDel := menu.Data("🗑️ Delete", "act_del")
-	btnEdit := menu.Data("✏️ Edit", "act_edit")
-	
-	var backBtn tele.Btn
-	if len(parts) == 1 { backBtn = menu.Data("🔙 Back", "btn_view_notes", "back") }
-	if len(parts) == 2 { backBtn = menu.Data("🔙 Back", "vyr", category) }
-	if len(parts) == 3 { backBtn = menu.Data("🔙 Back", "vmo", fmt.Sprintf("%s_%s", category, parts[1])) }
-	if len(parts) == 4 { backBtn = menu.Data("🔙 Back", "vdt", fmt.Sprintf("%s_%s_%s", category, parts[1], parts[2])) }
+	prefix := "v"
+	if mode == "manage" { prefix = "m" }
 
-	menu.Inline(menu.Row(btnEdit, btnDel), menu.Row(backBtn))
-	return c.Edit(sb.String(), menu, tele.ModeMarkdown)
+	var backBtn tele.Btn
+	if len(parts) == 1 { backBtn = menu.Data("🔙 Back", prefix+"cat", "back") }
+	if len(parts) == 2 { backBtn = menu.Data("🔙 Back", prefix+"yr", category) }
+	if len(parts) == 3 { backBtn = menu.Data("🔙 Back", prefix+"mo", fmt.Sprintf("%s_%s", category, parts[1])) }
+	if len(parts) == 4 { backBtn = menu.Data("🔙 Back", prefix+"dt", fmt.Sprintf("%s_%s_%s", category, parts[1], parts[2])) }
+
+	if mode == "view" {
+		var sb strings.Builder
+		sb.WriteString(titleMsg + "\n════════════════\n\n")
+		wib := time.FixedZone("WIB", 7*3600)
+		for i := len(notes)-1; i >= 0; i-- {
+			note := notes[i]
+			timeStr := note.CreatedAt.In(wib).Format("02 Jan 06 15:04 WIB")
+			idx := len(notes) - i
+			noteBlock := fmt.Sprintf("%d. *%s* — %s\n> %s\n\n", idx, note.Title, timeStr, note.Content)
+			if sb.Len()+len(noteBlock) > 3800 {
+				sb.WriteString("_... (truncated)_\n")
+				break
+			}
+			sb.WriteString(noteBlock)
+		}
+		return c.Send(sb.String(), tele.ModeMarkdown)
+	}
+
+	msg := fmt.Sprintf("⚙️ *%s*\nSelect a note to manage:", strings.ReplaceAll(titleMsg, "📑 ", ""))
+	var rows []tele.Row
+	wib := time.FixedZone("WIB", 7*3600)
+	for _, note := range notes {
+		timeStr := note.CreatedAt.In(wib).Format("15:04")
+		btnText := fmt.Sprintf("%s — %s", timeStr, note.Title)
+		btn := menu.Data(btnText, "m_n", note.ID.Hex()+"|"+data)
+		rows = append(rows, menu.Row(btn))
+	}
+	rows = append(rows, menu.Row(backBtn))
+	menu.Inline(rows...)
+	if isNewMessage { return c.Send(msg, menu, tele.ModeMarkdown) }
+	return c.Edit(msg, menu, tele.ModeMarkdown)
+}
+
+func handleViewSingleNoteForManage(c tele.Context) error {
+	c.Respond()
+	callbackData := c.Callback().Data
+	parts := strings.Split(callbackData, "|")
+	if len(parts) != 2 { return c.Send("❌ Error parsing callback.") }
+	
+	noteIDStr := parts[0]
+	backContext := parts[1]
+	
+	objID, err := primitive.ObjectIDFromHex(noteIDStr)
+	if err != nil { return c.Send("❌ Invalid ID.") }
+	
+	var note models.Notes
+	err = config.Database.Collection("notes").FindOne(context.Background(), bson.M{"_id": objID}).Decode(&note)
+	if err != nil {
+		return c.Send("❌ Note not found. It might have been deleted.")
+	}
+	
+	wib := time.FixedZone("WIB", 7*3600)
+	timeStr := note.CreatedAt.In(wib).Format("02 Jan 06 15:04 WIB")
+	
+	icon := "📝"
+	if note.Type == "journal" { icon = "📓" }
+	if note.Type == "idea" { icon = "💡" }
+	if note.Type == "task" { icon = "✅" }
+
+	msg := fmt.Sprintf("%s *%s*\n_%s_\n\n%s", icon, note.Title, timeStr, note.Content)
+	
+	menu := &tele.ReplyMarkup{}
+	btnEdit := menu.Data("✏️ Edit", "act_edit", callbackData)
+	btnDel := menu.Data("🗑️ Delete", "act_del", callbackData)
+	btnBack := menu.Data("🔙 Back to List", "mlist", backContext)
+	
+	menu.Inline(menu.Row(btnEdit, btnDel), menu.Row(btnBack))
+	return c.Edit(msg, menu, tele.ModeMarkdown)
 }
 
 func handleActionDelete(c tele.Context) error {
 	c.Respond()
-	userNoteState[c.Chat().ID] = "delete_prompt"
-	return c.Send("🗑️ Reply with the **number** of the note you want to delete (e.g., 1, 2, 3):", tele.ModeMarkdown)
+	callbackData := c.Callback().Data
+	parts := strings.Split(callbackData, "|")
+	if len(parts) != 2 { return c.Send("❌ Error parsing callback.") }
+	
+	noteIDStr := parts[0]
+	backContext := parts[1]
+	
+	objID, err := primitive.ObjectIDFromHex(noteIDStr)
+	if err != nil { return c.Send("❌ Invalid ID.") }
+	
+	_, err = config.Database.Collection("notes").DeleteOne(context.Background(), bson.M{"_id": objID})
+	if err != nil { return c.Send("❌ Failed to delete.") }
+	
+	return handleViewNotesStaticList(c, backContext, "manage", false)
 }
 
 func handleActionEdit(c tele.Context) error {
 	c.Respond()
-	userNoteState[c.Chat().ID] = "edit_prompt"
-	return c.Send("✏️ Reply with the **number** of the note you want to edit:", tele.ModeMarkdown)
-}
-
-func handleDeleteInput(c tele.Context) error {
-	delete(userNoteState, c.Chat().ID)
-	text := strings.TrimSpace(c.Message().Text)
-	idx, err := strconv.Atoi(text)
-	if err != nil || idx < 1 {
-		return c.Send("❌ Invalid number. Please try again from the Notes menu.", notesMenu)
-	}
+	callbackData := c.Callback().Data
+	parts := strings.Split(callbackData, "|")
+	if len(parts) != 2 { return c.Send("❌ Error parsing callback.") }
 	
-	ids, ok := userNotesContext[c.Chat().ID]
-	if !ok || idx > len(ids) {
-		return c.Send("❌ Note number not found in current context. Please load the list again.", notesMenu)
-	}
-	
-	targetID := ids[idx-1]
-	_, err = config.Database.Collection("notes").DeleteOne(context.Background(), bson.M{"_id": targetID})
-	if err != nil {
-		return c.Send("❌ Failed to delete note.", notesMenu)
-	}
-	
-	return c.Send(fmt.Sprintf("✅ Note #%d has been deleted.", idx), notesMenu)
-}
-
-func handleEditInputPhase1(c tele.Context) error {
-	delete(userNoteState, c.Chat().ID)
-	text := strings.TrimSpace(c.Message().Text)
-	idx, err := strconv.Atoi(text)
-	if err != nil || idx < 1 {
-		return c.Send("❌ Invalid number.", notesMenu)
-	}
-	ids, ok := userNotesContext[c.Chat().ID]
-	if !ok || idx > len(ids) {
-		return c.Send("❌ Note number not found.", notesMenu)
-	}
-	
-	targetID := ids[idx-1]
-	userEditTarget[c.Chat().ID] = targetID
+	noteIDStr := parts[0]
+	objID, _ := primitive.ObjectIDFromHex(noteIDStr)
+	userEditTarget[c.Chat().ID] = objID
 	userNoteState[c.Chat().ID] = "edit_typing"
 	
-	return c.Send(fmt.Sprintf("✏️ Note #%d selected.\nNow reply with the new Note text (Title on first line, Content on next lines):", idx))
+	return c.Send("✏️ Note selected.\nNow reply with the new Note text (Title on first line, Content on next lines):")
 }
 
 func handleEditInputPhase2(c tele.Context) error {
@@ -458,6 +518,23 @@ func handleEditInputPhase2(c tele.Context) error {
 	return c.Send("✅ Note updated successfully!", notesMenu)
 }
 
+func handleAddNoteCommand(c tele.Context, category string) error {
+	userNoteState[c.Chat().ID] = strings.ToLower(category)
+	return c.Send(fmt.Sprintf("📝 You are adding a new *%s* note.\n\nPlease type your note below (First line will be Title, the rest will be Content):", category), tele.ModeMarkdown)
+}
+
+func handleViewNoteCommand(c tele.Context, category string) error {
+	return handleViewNotesYears(c, category, "view", true)
+}
+
+func handleViewAllNoteCommand(c tele.Context, category string) error {
+	return handleViewNotesStaticList(c, category, "view", true)
+}
+
+func handleManageNoteCommand(c tele.Context, category string) error {
+	return handleViewNotesYears(c, category, "manage", true)
+}
+
 func RegisterNotesHandlers(b *tele.Bot, webToolsMenu *tele.ReplyMarkup) {
 	b.Handle("\fbtn_notes", handleNotesMenu)
 	b.Handle(&btnNotesBack, func(c tele.Context) error {
@@ -484,17 +561,25 @@ func RegisterNotesHandlers(b *tele.Bot, webToolsMenu *tele.ReplyMarkup) {
 		return handleNotesMenu(c)
 	})
 
-	b.Handle(&btnViewNotes, handleViewNotesCategory)
-	b.Handle("\fbtn_view_notes", handleViewNotesCategory)
+	b.Handle(&btnViewNotes, func(c tele.Context) error { return handleViewNotesCategory(c, "view") })
+	b.Handle(&btnManageNotes, func(c tele.Context) error { return handleViewNotesCategory(c, "manage") })
 	
 	b.Handle("\fbtn_notes_back_main", func(c tele.Context) error {
 		return handleNotesMenu(c)
 	})
 
-	b.Handle(&tele.Btn{Unique: "vyr"}, func(c tele.Context) error { return handleViewNotesYears(c, c.Callback().Data) })
-	b.Handle(&tele.Btn{Unique: "vmo"}, func(c tele.Context) error { return handleViewNotesMonths(c, c.Callback().Data) })
-	b.Handle(&tele.Btn{Unique: "vdt"}, func(c tele.Context) error { return handleViewNotesDates(c, c.Callback().Data) })
-	b.Handle(&tele.Btn{Unique: "vlist"}, func(c tele.Context) error { return handleViewNotesStaticList(c, c.Callback().Data) })
+	b.Handle(&tele.Btn{Unique: "vcat"}, func(c tele.Context) error { return handleViewNotesCategory(c, "view") })
+	b.Handle(&tele.Btn{Unique: "vyr"}, func(c tele.Context) error { return handleViewNotesYears(c, c.Callback().Data, "view", false) })
+	b.Handle(&tele.Btn{Unique: "vmo"}, func(c tele.Context) error { return handleViewNotesMonths(c, c.Callback().Data, "view") })
+	b.Handle(&tele.Btn{Unique: "vdt"}, func(c tele.Context) error { return handleViewNotesDates(c, c.Callback().Data, "view") })
+	b.Handle(&tele.Btn{Unique: "vlist"}, func(c tele.Context) error { return handleViewNotesStaticList(c, c.Callback().Data, "view", false) })
+	
+	b.Handle(&tele.Btn{Unique: "mcat"}, func(c tele.Context) error { return handleViewNotesCategory(c, "manage") })
+	b.Handle(&tele.Btn{Unique: "myr"}, func(c tele.Context) error { return handleViewNotesYears(c, c.Callback().Data, "manage", false) })
+	b.Handle(&tele.Btn{Unique: "mmo"}, func(c tele.Context) error { return handleViewNotesMonths(c, c.Callback().Data, "manage") })
+	b.Handle(&tele.Btn{Unique: "mdt"}, func(c tele.Context) error { return handleViewNotesDates(c, c.Callback().Data, "manage") })
+	b.Handle(&tele.Btn{Unique: "mlist"}, func(c tele.Context) error { return handleViewNotesStaticList(c, c.Callback().Data, "manage", false) })
+	b.Handle(&tele.Btn{Unique: "m_n"}, handleViewSingleNoteForManage)
 	
 	b.Handle(&tele.Btn{Unique: "act_del"}, handleActionDelete)
 	b.Handle(&tele.Btn{Unique: "act_edit"}, handleActionEdit)
@@ -503,11 +588,7 @@ func RegisterNotesHandlers(b *tele.Bot, webToolsMenu *tele.ReplyMarkup) {
 func CheckNotesText(c tele.Context) (bool, error) {
 	state, ok := userNoteState[c.Chat().ID]
 	if ok {
-		if state == "delete_prompt" {
-			return true, handleDeleteInput(c)
-		} else if state == "edit_prompt" {
-			return true, handleEditInputPhase1(c)
-		} else if state == "edit_typing" {
+		if state == "edit_typing" {
 			return true, handleEditInputPhase2(c)
 		}
 		return true, handleNoteInput(c)

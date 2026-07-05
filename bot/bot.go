@@ -186,6 +186,28 @@ func InitBot() {
 	
 	RegisterNotesHandlers(b, webToolsMenu)
 
+	// Note Shortcut Commands
+	// Add Note Commands
+	b.Handle("/add_journal", func(c tele.Context) error { return handleAddNoteCommand(c, "Journal") })
+	b.Handle("/add_idea", func(c tele.Context) error { return handleAddNoteCommand(c, "Idea") })
+	b.Handle("/add_task", func(c tele.Context) error { return handleAddNoteCommand(c, "Task") })
+
+	// View Note Commands (Static)
+	b.Handle("/view_notes", func(c tele.Context) error { return handleViewNoteCommand(c, "all") })
+	b.Handle("/view_journal", func(c tele.Context) error { return handleViewNoteCommand(c, "journal") })
+	b.Handle("/view_idea", func(c tele.Context) error { return handleViewNoteCommand(c, "idea") })
+	b.Handle("/view_task", func(c tele.Context) error { return handleViewNoteCommand(c, "task") })
+
+	// View All Direct Commands
+	b.Handle("/view_all_task", func(c tele.Context) error { return handleViewAllNoteCommand(c, "task") })
+	b.Handle("/view_all_idea", func(c tele.Context) error { return handleViewAllNoteCommand(c, "idea") })
+
+	// Manage Note Commands (Dynamic)
+	b.Handle("/manage_notes", func(c tele.Context) error { return handleManageNoteCommand(c, "all") })
+	b.Handle("/manage_journal", func(c tele.Context) error { return handleManageNoteCommand(c, "journal") })
+	b.Handle("/manage_idea", func(c tele.Context) error { return handleManageNoteCommand(c, "idea") })
+	b.Handle("/manage_task", func(c tele.Context) error { return handleManageNoteCommand(c, "task") })
+
 	// Catch text for Notes
 	b.Handle(tele.OnText, func(c tele.Context) error {
 		handled, err := CheckNotesText(c)
