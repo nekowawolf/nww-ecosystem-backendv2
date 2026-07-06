@@ -16,10 +16,10 @@ func RegisterBotCommands(b *tele.Bot, menu *tele.ReplyMarkup, serverMenu *tele.R
 		{Text: "add_journal", Description: "add a new journal note"},
 		{Text: "add_idea", Description: "add a new idea note"},
 		{Text: "add_task", Description: "add a new task note"},
-		{Text: "view_notes", Description: "view all notes (static)"},
-		{Text: "view_journal", Description: "view journal notes (static)"},
-		{Text: "view_idea", Description: "view idea notes (static)"},
-		{Text: "view_task", Description: "view task notes (static)"},
+		{Text: "view_notes", Description: "view all notes"},
+		{Text: "view_journal", Description: "view journal notes"},
+		{Text: "view_idea", Description: "view idea notes"},
+		{Text: "view_task", Description: "view task notes"},
 		{Text: "view_all_task", Description: "view all task notes directly"},
 		{Text: "view_all_idea", Description: "view all idea notes directly"},
 		{Text: "manage_notes", Description: "manage all notes"},
@@ -28,9 +28,10 @@ func RegisterBotCommands(b *tele.Bot, menu *tele.ReplyMarkup, serverMenu *tele.R
 		{Text: "manage_task", Description: "manage task notes"},
 	}
 
+	// Set for Default Scope
 	err := b.SetCommands(commands)
 	if err != nil {
-		log.Printf("Failed to set bot commands: %v", err)
+		log.Printf("Failed to set bot commands (default scope): %v", err)
 	}
 
 	b.Handle("/start", func(c tele.Context) error {
