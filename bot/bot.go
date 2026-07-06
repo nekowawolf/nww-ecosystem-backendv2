@@ -97,10 +97,6 @@ func InitBot() {
 		webToolsMenu.Row(btnWebToolsBack),
 	)
 
-	b.Handle("/start", func(c tele.Context) error {
-		msg := "🤖 Hi, I’m NwwOne\n\nThe central management system of the Nww Ecosystem.\n\nI'm here to assist with infrastructure monitoring, backups, project management, and automated operations across all connected services\n\nSelect an action below."
-		return c.Send(msg, menu)
-	})
 
 	b.Handle(&btnBackup, func(c tele.Context) error {
 		c.Respond()
@@ -186,28 +182,6 @@ func InitBot() {
 	
 	RegisterNotesHandlers(b, webToolsMenu)
 
-	// Note Shortcut Commands
-	// Add Note Commands
-	b.Handle("/add_journal", func(c tele.Context) error { return handleAddNoteCommand(c, "Journal") })
-	b.Handle("/add_idea", func(c tele.Context) error { return handleAddNoteCommand(c, "Idea") })
-	b.Handle("/add_task", func(c tele.Context) error { return handleAddNoteCommand(c, "Task") })
-
-	// View Note Commands (Static)
-	b.Handle("/view_notes", func(c tele.Context) error { return handleViewNoteCommand(c, "all") })
-	b.Handle("/view_journal", func(c tele.Context) error { return handleViewNoteCommand(c, "journal") })
-	b.Handle("/view_idea", func(c tele.Context) error { return handleViewNoteCommand(c, "idea") })
-	b.Handle("/view_task", func(c tele.Context) error { return handleViewNoteCommand(c, "task") })
-
-	// View All Direct Commands
-	b.Handle("/view_all_task", func(c tele.Context) error { return handleViewAllNoteCommand(c, "task") })
-	b.Handle("/view_all_idea", func(c tele.Context) error { return handleViewAllNoteCommand(c, "idea") })
-
-	// Manage Note Commands (Dynamic)
-	b.Handle("/manage_notes", func(c tele.Context) error { return handleManageNoteCommand(c, "all") })
-	b.Handle("/manage_journal", func(c tele.Context) error { return handleManageNoteCommand(c, "journal") })
-	b.Handle("/manage_idea", func(c tele.Context) error { return handleManageNoteCommand(c, "idea") })
-	b.Handle("/manage_task", func(c tele.Context) error { return handleManageNoteCommand(c, "task") })
-
 	// Catch text for Notes
 	b.Handle(tele.OnText, func(c tele.Context) error {
 		handled, err := CheckNotesText(c)
@@ -217,22 +191,12 @@ func InitBot() {
 		return nil
 	})
 
-	// Dynamic callbacks for notes are now handled natively via \f prefixes
-
 	// Catch photos for CDN upload
 	b.Handle(tele.OnPhoto, handlePhotoUpload)
 
-	// Commands
-	b.Handle("/backup", handleBackup)
-	b.Handle("/status", handleStatus)
-	b.Handle("/fullinfo", func(c tele.Context) error {
-		if !checkAuth(c) {
-			return c.Send("❌ Unauthorized access.")
-		}
-		return c.Send(GetFullInfo(), serverMenu)
-	})
-	b.Handle("/speedtest", handleSpeedTest)
-	b.Handle("/notes", handleNotesMenu)
+	// Register all text commands
+	RegisterBotCommands(b, menu, serverMenu)
+
 
 	go b.Start()
 	log.Println("Telegram bot is running")
