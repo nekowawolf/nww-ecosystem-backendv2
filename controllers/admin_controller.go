@@ -1,21 +1,18 @@
 package controllers
 
 import (
-	"context"
 	"time"
-
 	"github.com/gofiber/fiber/v2"
-	"github.com/nekowawolf/airdropv2/config"
-	"github.com/nekowawolf/airdropv2/models"
 	"github.com/nekowawolf/airdropv2/module"
+	"github.com/nekowawolf/airdropv2/models"
 	"github.com/nekowawolf/airdropv2/utils"
 )
 
 func InsertAdminHandler(c *fiber.Ctx) error {
 	var req models.Admin
 
-	if err := utils.ParseBody(c, &req); err != nil {
-		return err
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
 	}
 
 	insertedID, err := module.InsertAdmin(req.Username, req.Password)
@@ -36,8 +33,8 @@ func LoginAdminHandler(c *fiber.Ctx) error {
 	}
 
 	var req Request
-	if err := utils.ParseBody(c, &req); err != nil {
-		return err
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
 	}
 
 	isAuthenticated, err := module.LoginAdmin(req.Username, req.Password)
@@ -50,7 +47,7 @@ func LoginAdminHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate tokens"})
 	}
 
-	err = config.RedisClient.Set(context.Background(), "refresh_token:"+refreshToken, req.Username, 7*24*time.Hour).Err()
+	err = module.SaveRefreshToken(req.Username, refreshToken, time.Now().Add(7*24*time.Hour))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to save refresh token"})
 	}
@@ -69,16 +66,15 @@ func RefreshTokenHandler(c *fiber.Ctx) error {
 	}
 
 	var req Request
-	if err := utils.ParseBody(c, &req); err != nil {
-		return err
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
 	}
 
 	if req.RefreshToken == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Refresh token is required"})
 	}
 
-	err := config.RedisClient.Get(context.Background(), "refresh_token:"+req.RefreshToken).Err()
-	if err != nil {
+	if !module.CheckRefreshToken(req.RefreshToken) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Refresh token not found or expired"})
 	}
 
@@ -99,15 +95,15 @@ func LogoutHandler(c *fiber.Ctx) error {
 	}
 
 	var req Request
-	if err := utils.ParseBody(c, &req); err != nil {
-		return err
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
 	if req.RefreshToken == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Refresh token is required"})
 	}
 
-	err := config.RedisClient.Del(context.Background(), "refresh_token:"+req.RefreshToken).Err()
+	err := module.DeleteRefreshToken(req.RefreshToken)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete refresh token"})
 	}
