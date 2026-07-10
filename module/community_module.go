@@ -2,6 +2,7 @@ package module
 
 import (
 	"fmt"
+	"time"
 	"github.com/nekowawolf/airdropv2/config"
 	"github.com/nekowawolf/airdropv2/models"
 	"github.com/nekowawolf/airdropv2/utils"
@@ -17,6 +18,7 @@ func InsertCryptoCommunity(name, platforms, category, imgURL, linkURL string) in
         Category:  category,
         ImgURL:    imgURL,
         LinkURL:   linkURL,
+        CreatedAt: time.Now(),
     }
 
     insertedID, err := InsertDocument("cryptoCommunity", newCrypto)

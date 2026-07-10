@@ -78,7 +78,7 @@ func InsertAITools(c *fiber.Ctx) error {
 		req.Twitter,
 		req.Instagram,
 		req.Discord,
-		req.Telegram,
+		req.Youtube,
 	)
 
 	if insertedID == nil {
@@ -116,7 +116,7 @@ func UpdateAIToolsByID(c *fiber.Ctx) error {
 		Twitter:     req.Twitter,
 		Instagram:   req.Instagram,
 		Discord:     req.Discord,
-		Telegram:    req.Telegram,
+		Youtube:     req.Youtube,
 	}
 
 	updatedTool, err := module.UpdateAIToolsByID(id, updateData)

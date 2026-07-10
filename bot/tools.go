@@ -262,6 +262,7 @@ func handleCheckInvalidLink(c tele.Context) error {
 				LinkClaim    string `json:"link_claim"`
 				VideoURL     string `json:"video_url"`
 				Instagram    string `json:"instagram"`
+				Youtube      string `json:"youtube"`
 			} `json:"data"`
 		}
 
@@ -300,6 +301,7 @@ func handleCheckInvalidLink(c tele.Context) error {
 				{"Claim", item.LinkClaim},
 				{"Video", item.VideoURL},
 				{"Instagram", item.Instagram},
+				{"Youtube", item.Youtube},
 			}
 
 			for _, l := range linksToCheck {

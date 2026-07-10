@@ -2,6 +2,7 @@ package models
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
 type GithubRepo struct {
@@ -16,5 +17,5 @@ type GithubRepo struct {
 	Twitter     string             `bson:"twitter,omitempty" json:"twitter,omitempty"`
 	Instagram   string             `bson:"instagram,omitempty" json:"instagram,omitempty"`
 	Discord     string             `bson:"discord,omitempty" json:"discord,omitempty"`
-	Telegram    string             `bson:"telegram,omitempty" json:"telegram,omitempty"`
+	CreatedAt   time.Time          `bson:"createdAt,omitempty" json:"createdAt,omitempty"`
 }

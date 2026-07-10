@@ -79,7 +79,6 @@ func InsertGithubRepo(c *fiber.Ctx) error {
 		req.Twitter,
 		req.Instagram,
 		req.Discord,
-		req.Telegram,
 	)
 
 	if insertedID == nil {
@@ -118,7 +117,6 @@ func UpdateGithubRepoByID(c *fiber.Ctx) error {
 		Twitter:     req.Twitter,
 		Instagram:   req.Instagram,
 		Discord:     req.Discord,
-		Telegram:    req.Telegram,
 	}
 
 	updatedRepo, err := module.UpdateGithubRepoByID(id, updateData)

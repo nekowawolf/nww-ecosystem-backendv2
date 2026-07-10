@@ -79,6 +79,7 @@ func InsertWeb3Tools(c *fiber.Ctx) error {
 		req.Instagram,
 		req.Discord,
 		req.Telegram,
+		req.Youtube,
 	)
 
 	if insertedID == nil {
@@ -117,6 +118,7 @@ func UpdateWeb3ToolsByID(c *fiber.Ctx) error {
 		Instagram:   req.Instagram,
 		Discord:     req.Discord,
 		Telegram:    req.Telegram,
+		Youtube:     req.Youtube,
 	}
 
 	updatedTool, err := module.UpdateWeb3ToolsByID(id, updateData)

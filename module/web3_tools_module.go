@@ -2,6 +2,7 @@ package module
 
 import (
 	"fmt"
+	"time"
 	"github.com/nekowawolf/airdropv2/config"
 	"github.com/nekowawolf/airdropv2/models"
 	"github.com/nekowawolf/airdropv2/utils"
@@ -9,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InsertWeb3Tools(name, description, category string, chains []string, imageUrl, website, twitter, instagram, discord, telegram string) interface{} {
+func InsertWeb3Tools(name, description, category string, chains []string, imageUrl, website, twitter, instagram, discord, telegram, youtube string) interface{} {
     newTool := models.Web3Tools{
         ID:          primitive.NewObjectID(),
         Name:        name,
@@ -22,6 +23,8 @@ func InsertWeb3Tools(name, description, category string, chains []string, imageU
         Instagram:   instagram,
         Discord:     discord,
         Telegram:    telegram,
+        Youtube:     youtube,
+        CreatedAt:   time.Now(),
     }
 
     insertedID, err := InsertDocument("web3Tools", newTool)
@@ -173,6 +176,7 @@ func UpdateWeb3ToolsByID(id primitive.ObjectID, updateData models.Web3Tools) (*m
 			"instagram":   updateData.Instagram,
 			"discord":     updateData.Discord,
 			"telegram":    updateData.Telegram,
+			"youtube":     updateData.Youtube,
 		},
 	}
 

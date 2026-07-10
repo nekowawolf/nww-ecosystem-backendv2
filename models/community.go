@@ -2,7 +2,7 @@ package models
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	
+	"time"
 )
 
 type CryptoCommunity struct {
@@ -12,4 +12,5 @@ type CryptoCommunity struct {
 	Category  string             `bson:"category,omitempty" json:"category,omitempty"`
 	ImgURL    string             `bson:"img_url,omitempty" json:"img_url,omitempty"`
 	LinkURL   string             `bson:"link_url,omitempty" json:"link_url,omitempty"`
+	CreatedAt time.Time          `bson:"createdAt,omitempty" json:"createdAt,omitempty"`
 }

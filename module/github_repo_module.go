@@ -2,6 +2,7 @@ package module
 
 import (
 	"fmt"
+	"time"
 	"github.com/nekowawolf/airdropv2/config"
 	"github.com/nekowawolf/airdropv2/models"
 	"github.com/nekowawolf/airdropv2/utils"
@@ -9,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InsertGithubRepo(name, description, category, repoURL, owner, repoName, website, twitter, instagram, discord, telegram string) interface{} {
+func InsertGithubRepo(name, description, category, repoURL, owner, repoName, website, twitter, instagram, discord string) interface{} {
 	newRepo := models.GithubRepo{
 		ID:          primitive.NewObjectID(),
 		Name:        name,
@@ -22,7 +23,7 @@ func InsertGithubRepo(name, description, category, repoURL, owner, repoName, web
 		Twitter:     twitter,
 		Instagram:   instagram,
 		Discord:     discord,
-		Telegram:    telegram,
+		CreatedAt:   time.Now(),
 	}
 
 	insertedID, err := InsertDocument("githubRepos", newRepo)
@@ -153,7 +154,6 @@ func UpdateGithubRepoByID(id primitive.ObjectID, updateData models.GithubRepo) (
 			"twitter":     updateData.Twitter,
 			"instagram":   updateData.Instagram,
 			"discord":     updateData.Discord,
-			"telegram":    updateData.Telegram,
 		},
 	}
 
