@@ -124,4 +124,8 @@ func SetupRoutes(app *fiber.App) {
 	protected.Post("/notes", controllers.InsertNote)
 	protected.Put("/notes/:id", controllers.UpdateNoteByID)
 	protected.Delete("/notes/:id", controllers.DeleteNoteByID)
+
+	// Protected Message routes
+	protected.Get("/message", controllers.GetMessage)
+	protected.Put("/message", controllers.UpdateMessage)
 }
