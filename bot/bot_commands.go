@@ -16,13 +16,11 @@ func RegisterBotCommands(b *tele.Bot, menu *tele.ReplyMarkup, serverMenu *tele.R
 		{Text: "add_journal", Description: "add a new journal note"},
 		{Text: "add_idea", Description: "add a new idea note"},
 		{Text: "add_task", Description: "add a new task note"},
-		{Text: "view_notes", Description: "view all notes"},
 		{Text: "view_journal", Description: "view journal notes"},
 		{Text: "view_idea", Description: "view idea notes"},
 		{Text: "view_task", Description: "view task notes"},
 		{Text: "view_all_task", Description: "view all task notes directly"},
 		{Text: "view_all_idea", Description: "view all idea notes directly"},
-		{Text: "manage_notes", Description: "manage all notes"},
 		{Text: "manage_journal", Description: "manage journal notes"},
 		{Text: "manage_idea", Description: "manage idea notes"},
 		{Text: "manage_task", Description: "manage task notes"},
@@ -45,7 +43,6 @@ func RegisterBotCommands(b *tele.Bot, menu *tele.ReplyMarkup, serverMenu *tele.R
 	b.Handle("/add_task", func(c tele.Context) error { return handleAddNoteCommand(c, "Task") })
 
 	// View Note Commands (Static)
-	b.Handle("/view_notes", func(c tele.Context) error { return handleViewNoteCommand(c, "all") })
 	b.Handle("/view_journal", func(c tele.Context) error { return handleViewNoteCommand(c, "journal") })
 	b.Handle("/view_idea", func(c tele.Context) error { return handleViewNoteCommand(c, "idea") })
 	b.Handle("/view_task", func(c tele.Context) error { return handleViewNoteCommand(c, "task") })
@@ -55,7 +52,6 @@ func RegisterBotCommands(b *tele.Bot, menu *tele.ReplyMarkup, serverMenu *tele.R
 	b.Handle("/view_all_idea", func(c tele.Context) error { return handleViewAllNoteCommand(c, "idea") })
 
 	// Manage Note Commands (Dynamic)
-	b.Handle("/manage_notes", func(c tele.Context) error { return handleManageNoteCommand(c, "all") })
 	b.Handle("/manage_journal", func(c tele.Context) error { return handleManageNoteCommand(c, "journal") })
 	b.Handle("/manage_idea", func(c tele.Context) error { return handleManageNoteCommand(c, "idea") })
 	b.Handle("/manage_task", func(c tele.Context) error { return handleManageNoteCommand(c, "task") })
