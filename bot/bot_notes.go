@@ -416,6 +416,10 @@ func handleViewNotesStaticList(c tele.Context, data string, mode string, isNewMe
 func handleDumpNotesText(c tele.Context) error {
 	c.Respond()
 	data := c.Callback().Data
+	return executeDumpNotes(c, data)
+}
+
+func executeDumpNotes(c tele.Context, data string) error {
 	parts := strings.Split(data, "_")
 	category := parts[0]
 	filter := bson.M{}
@@ -620,7 +624,7 @@ func handleViewNoteCommand(c tele.Context, category string) error {
 }
 
 func handleViewAllNoteCommand(c tele.Context, category string) error {
-	return handleViewNotesStaticList(c, category, "view", true)
+	return executeDumpNotes(c, category)
 }
 
 func handleManageNoteCommand(c tele.Context, category string) error {
