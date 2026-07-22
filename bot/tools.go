@@ -24,6 +24,21 @@ import (
 
 var userUploadState = make(map[int64]bool)
 
+type ProjectEndpoint struct {
+	ID    string
+	Label string
+	Path  string
+	Icon  string
+}
+
+var projectEndpoints = []ProjectEndpoint{
+	{"airdrop", "Airdrop", "/allairdrop", "🪂"},
+	{"cryptocommunity", "Crypto Community", "/cryptocommunity", "🪙"},
+	{"aitools", "AI Tools", "/aitools", "🤖"},
+	{"web3tools", "Web3 Tools", "/web3tools", "🌐"},
+	{"githubrepo", "Github Repo", "/githubrepo", "🐙"},
+}
+
 func checkAuth(c tele.Context) bool {
 	chatIDStr := os.Getenv("TELEGRAM_CHAT_ID")
 	if chatIDStr == "" {
@@ -98,32 +113,62 @@ func handleCheckMissingImages(c tele.Context) error {
 		return c.Send("❌ Unauthorized access.")
 	}
 
-	c.Send("🔍 Checking for missing images. This might take a while...")
+	menu := &tele.ReplyMarkup{}
+	var rows []tele.Row
+
+	for _, ep := range projectEndpoints {
+		if ep.ID == "githubrepo" { continue }
+		btn := menu.Data(ep.Icon+" "+ep.Label, "exe_img_chk", ep.ID)
+		if len(rows) > 0 && len(rows[len(rows)-1]) < 2 {
+			rows[len(rows)-1] = append(rows[len(rows)-1], btn)
+		} else {
+			rows = append(rows, menu.Row(btn))
+		}
+	}
+
+	btnCancel := menu.Data("❌ Cancel", "btn_cancel_chk")
+	rows = append(rows, menu.Row(btnCancel))
+	
+	menu.Inline(rows...)
+	return c.Edit("🔍 *Check Missing Images*\nPilih project mana yang mau di-scan:", menu, tele.ModeMarkdown)
+}
+
+func handleExecuteImageCheck(c tele.Context) error {
+	c.Respond()
+	if !checkAuth(c) {
+		return c.Send("❌ Unauthorized access.")
+	}
+
+	projectID := c.Callback().Data
+	var selectedEp *ProjectEndpoint
+	for _, ep := range projectEndpoints {
+		if ep.ID == projectID {
+			selectedEp = &ep
+			break
+		}
+	}
+
+	if selectedEp == nil {
+		return c.Edit("❌ Invalid project selected.")
+	}
+
+	c.Send(fmt.Sprintf("🔍 Checking missing images for *%s*...", selectedEp.Label), tele.ModeMarkdown)
 
 	baseURL, err := getBaseURL()
 	if err != nil {
 		return c.Send(fmt.Sprintf("❌ Configuration Error: %v", err))
 	}
-
-	endpoints := []struct {
-		Label string
-		URL   string
-	}{
-		{"Airdrop", baseURL + "/allairdrop"},
-		{"Crypto Community", baseURL + "/cryptocommunity"},
-		{"AI Tools", baseURL + "/aitools"},
-		{"Web3 Tools", baseURL + "/web3tools"},
-	}
+	urlStr := baseURL + selectedEp.Path
 
 	go func() {
 		totalMissing := 0
 		var detailsBlocks []string
 
-	for _, ep := range endpoints {
-		resp, err := http.Get(ep.URL)
+		resp, err := http.Get(urlStr)
 		if err != nil {
-			log.Printf("Error fetching %s: %v\n", ep.URL, err)
-			continue
+			log.Printf("Error fetching %s: %v\n", urlStr, err)
+			c.Send(fmt.Sprintf("❌ Error fetching %s: %v", selectedEp.Label, err))
+			return
 		}
 
 		var data struct {
@@ -141,37 +186,23 @@ func handleCheckMissingImages(c tele.Context) error {
 		err = json.NewDecoder(resp.Body).Decode(&data)
 		resp.Body.Close()
 		if err != nil {
-			log.Printf("Error decoding JSON from %s: %v\n", ep.URL, err)
-			continue
+			log.Printf("Error decoding JSON from %s: %v\n", urlStr, err)
+			c.Send(fmt.Sprintf("❌ Error decoding JSON from %s", selectedEp.Label))
+			return
 		}
 
 		var blockDetails string
 		for _, item := range data.Data {
 			imgURL := item.Image
-			if imgURL == "" {
-				imgURL = item.Logo
-			}
-			if imgURL == "" {
-				imgURL = item.ImageURL
-			}
-			if imgURL == "" {
-				imgURL = item.ImgURL
-			}
-			if imgURL == "" {
-				imgURL = item.ImageURICamel
-			}
-			if imgURL == "" {
-				imgURL = item.ImgURICamel
-			}
-			if imgURL == "" {
-				continue
-			}
+			if imgURL == "" { imgURL = item.Logo }
+			if imgURL == "" { imgURL = item.ImageURL }
+			if imgURL == "" { imgURL = item.ImgURL }
+			if imgURL == "" { imgURL = item.ImageURICamel }
+			if imgURL == "" { imgURL = item.ImgURICamel }
+			if imgURL == "" { continue }
 
-			// Ping the image URL
 			req, err := http.NewRequest("GET", imgURL, nil)
-			if err != nil {
-				continue
-			}
+			if err != nil { continue }
 			req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 			
 			client := &http.Client{Timeout: 10 * time.Second}
@@ -187,23 +218,17 @@ func handleCheckMissingImages(c tele.Context) error {
 		}
 
 		if blockDetails != "" {
-			detailsBlocks = append(detailsBlocks, fmt.Sprintf("[%s]\n%s", ep.Label, blockDetails))
-		}
-	}
-
-	msg := "🔍 Image Check Complete!\n\n"
-	msg += fmt.Sprintf("Total Broken Images: %d\n", totalMissing)
-
-	if len(detailsBlocks) > 0 {
-		msg += "\nDetails:\n" + strings.Join(detailsBlocks, "\n")
-	} else {
-		msg += "\nDetails: All images are safe!"
-	}
-
-		if len(msg) > 4000 {
-			msg = msg[:4000] + "\n... (truncated)"
+			detailsBlocks = append(detailsBlocks, fmt.Sprintf("[%s]\n%s", selectedEp.Label, blockDetails))
 		}
 
+		msg := fmt.Sprintf("🔍 Image Check Complete for *%s*!\n\nTotal Broken Images: %d\n", selectedEp.Label, totalMissing)
+		if len(detailsBlocks) > 0 {
+			msg += "\nDetails:\n" + strings.Join(detailsBlocks, "\n")
+		} else {
+			msg += "\nDetails: All images are safe!"
+		}
+
+		if len(msg) > 4000 { msg = msg[:4000] + "\n... (truncated)" }
 		c.Send(msg)
 	}()
 
@@ -216,33 +241,61 @@ func handleCheckInvalidLink(c tele.Context) error {
 		return c.Send("❌ Unauthorized access.")
 	}
 
-	c.Send("🔗 Checking for invalid links. This might take a while...")
+	menu := &tele.ReplyMarkup{}
+	var rows []tele.Row
+
+	for _, ep := range projectEndpoints {
+		btn := menu.Data(ep.Icon+" "+ep.Label, "exe_lnk_chk", ep.ID)
+		if len(rows) > 0 && len(rows[len(rows)-1]) < 2 {
+			rows[len(rows)-1] = append(rows[len(rows)-1], btn)
+		} else {
+			rows = append(rows, menu.Row(btn))
+		}
+	}
+
+	btnCancel := menu.Data("❌ Cancel", "btn_cancel_chk")
+	rows = append(rows, menu.Row(btnCancel))
+	
+	menu.Inline(rows...)
+	return c.Edit("🔗 *Check Invalid Links*\nPilih project mana yang mau di-scan:", menu, tele.ModeMarkdown)
+}
+
+func handleExecuteLinkCheck(c tele.Context) error {
+	c.Respond()
+	if !checkAuth(c) {
+		return c.Send("❌ Unauthorized access.")
+	}
+
+	projectID := c.Callback().Data
+	var selectedEp *ProjectEndpoint
+	for _, ep := range projectEndpoints {
+		if ep.ID == projectID {
+			selectedEp = &ep
+			break
+		}
+	}
+
+	if selectedEp == nil {
+		return c.Edit("❌ Invalid project selected.")
+	}
+
+	c.Send(fmt.Sprintf("🔗 Checking invalid links for *%s*...", selectedEp.Label), tele.ModeMarkdown)
 
 	baseURL, err := getBaseURL()
 	if err != nil {
 		return c.Send(fmt.Sprintf("❌ Configuration Error: %v", err))
 	}
-
-	endpoints := []struct {
-		Label string
-		URL   string
-	}{
-		{"Airdrop", baseURL + "/allairdrop"},
-		{"Crypto Community", baseURL + "/cryptocommunity"},
-		{"AI Tools", baseURL + "/aitools"},
-		{"Web3 Tools", baseURL + "/web3tools"},
-		{"Github Repo", baseURL + "/githubrepo"},
-	}
+	urlStr := baseURL + selectedEp.Path
 
 	go func() {
 		totalInvalid := 0
 		var detailsBlocks []string
 
-	for _, ep := range endpoints {
-		resp, err := http.Get(ep.URL)
+		resp, err := http.Get(urlStr)
 		if err != nil {
-			log.Printf("Error fetching %s: %v\n", ep.URL, err)
-			continue
+			log.Printf("Error fetching %s: %v\n", urlStr, err)
+			c.Send(fmt.Sprintf("❌ Error fetching %s: %v", selectedEp.Label, err))
+			return
 		}
 
 		var data struct {
@@ -269,22 +322,17 @@ func handleCheckInvalidLink(c tele.Context) error {
 		err = json.NewDecoder(resp.Body).Decode(&data)
 		resp.Body.Close()
 		if err != nil {
-			log.Printf("Error decoding JSON from %s: %v\n", ep.URL, err)
-			continue
+			log.Printf("Error decoding JSON from %s: %v\n", urlStr, err)
+			c.Send(fmt.Sprintf("❌ Error decoding JSON from %s", selectedEp.Label))
+			return
 		}
 
 		var blockDetails string
 		for _, item := range data.Data {
 			primaryLink := item.Link
-			if primaryLink == "" {
-				primaryLink = item.LinkURL
-			}
-			if primaryLink == "" {
-				primaryLink = item.Website
-			}
-			if primaryLink == "" {
-				primaryLink = item.LinkURLCamel
-			}
+			if primaryLink == "" { primaryLink = item.LinkURL }
+			if primaryLink == "" { primaryLink = item.Website }
+			if primaryLink == "" { primaryLink = item.LinkURLCamel }
 
 			linksToCheck := []struct {
 				Name string
@@ -306,11 +354,8 @@ func handleCheckInvalidLink(c tele.Context) error {
 
 			for _, l := range linksToCheck {
 				link := l.URL
-				if link == "" {
-					continue
-				}
+				if link == "" { continue }
 
-				// Validate URL format
 				parsedURL, err := url.ParseRequestURI(link)
 				if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
 					totalInvalid++
@@ -318,11 +363,8 @@ func handleCheckInvalidLink(c tele.Context) error {
 					continue
 				}
 
-				// Ping the link
 				req, err := http.NewRequest("GET", link, nil)
-				if err != nil {
-					continue
-				}
+				if err != nil { continue }
 				req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 				
 				client := &http.Client{Timeout: 10 * time.Second}
@@ -339,23 +381,17 @@ func handleCheckInvalidLink(c tele.Context) error {
 		}
 
 		if blockDetails != "" {
-			detailsBlocks = append(detailsBlocks, fmt.Sprintf("[%s]\n%s", ep.Label, blockDetails))
-		}
-	}
-
-	msg := "🔗 Invalid Link Check Complete!\n\n"
-	msg += fmt.Sprintf("Total Invalid Links: %d\n", totalInvalid)
-
-	if len(detailsBlocks) > 0 {
-		msg += "\nDetails:\n" + strings.Join(detailsBlocks, "\n")
-	} else {
-		msg += "\nDetails: All links are valid!"
-	}
-
-		if len(msg) > 4000 {
-			msg = msg[:4000] + "\n... (truncated)"
+			detailsBlocks = append(detailsBlocks, fmt.Sprintf("[%s]\n%s", selectedEp.Label, blockDetails))
 		}
 
+		msg := fmt.Sprintf("🔗 Invalid Link Check Complete for *%s*!\n\nTotal Invalid Links: %d\n", selectedEp.Label, totalInvalid)
+		if len(detailsBlocks) > 0 {
+			msg += "\nDetails:\n" + strings.Join(detailsBlocks, "\n")
+		} else {
+			msg += "\nDetails: All links are valid!"
+		}
+
+		if len(msg) > 4000 { msg = msg[:4000] + "\n... (truncated)" }
 		c.Send(msg)
 	}()
 

@@ -180,6 +180,13 @@ func InitBot() {
 	b.Handle(&btnMissingImages, handleCheckMissingImages)
 	b.Handle(&btnCheckInvalidLink, handleCheckInvalidLink)
 	
+	b.Handle(&tele.Btn{Unique: "exe_img_chk"}, handleExecuteImageCheck)
+	b.Handle(&tele.Btn{Unique: "exe_lnk_chk"}, handleExecuteLinkCheck)
+	b.Handle(&tele.Btn{Unique: "btn_cancel_chk"}, func(c tele.Context) error {
+		c.Respond()
+		return c.Edit("🌐 Web Tools\n\nPlease select an action below:", webToolsMenu)
+	})
+	
 	RegisterNotesHandlers(b, webToolsMenu)
 
 	// Catch text for Notes

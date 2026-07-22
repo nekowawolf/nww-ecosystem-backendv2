@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"fmt"
+	"html"
 	"log"
 	"strconv"
 	"strings"
@@ -121,7 +122,7 @@ func handleNoteInput(c tele.Context) error {
 		return c.Send("❌ Failed to save your note due to a database error.")
 	}
 
-	msg := fmt.Sprintf("✅ *Note successfully saved!*\n\n*Category:* %s\n*Date:* %s\n*Content:* %s", category, note.CreatedAt.Format("02 Jan 2006"), title)
+	msg := fmt.Sprintf("✅ <b>Note successfully saved!</b>\n\n<b>Category:</b> %s\n<b>Date:</b> %s\n<b>Content:</b> %s", html.EscapeString(category), note.CreatedAt.Format("02 Jan 2006"), html.EscapeString(title))
 	
 	menu := &tele.ReplyMarkup{}
 	btnAddAnother := menu.Data("➕ Add Another", "btn_add_note")
@@ -130,7 +131,7 @@ func handleNoteInput(c tele.Context) error {
 		menu.Row(btnAddAnother, btnBack),
 	)
 
-	return c.Send(msg, menu, tele.ModeMarkdown)
+	return c.Send(msg, menu, tele.ModeHTML)
 }
 
 func getMonthName(month int) string {
@@ -428,21 +429,21 @@ func executeDumpNotes(c tele.Context, data string) error {
 	wib := time.FixedZone("WIB", 7*3600)
 	var titleMsg string
 	if len(parts) == 1 {
-		titleMsg = fmt.Sprintf("📑 *All %s Notes*", strings.Title(category))
-		if category == "all" { titleMsg = "📑 *All Notes*" }
+		titleMsg = fmt.Sprintf("📑 <b>All %s Notes</b>", strings.Title(category))
+		if category == "all" { titleMsg = "📑 <b>All Notes</b>" }
 	} else if len(parts) == 2 {
 		year, _ := strconv.Atoi(parts[1])
 		startDate := time.Date(year, 1, 1, 0, 0, 0, 0, wib)
 		endDate := time.Date(year+1, 1, 1, 0, 0, 0, 0, wib)
 		filter["created_at"] = bson.M{"$gte": startDate, "$lt": endDate}
-		titleMsg = fmt.Sprintf("📑 *%s Notes - %d*", strings.Title(category), year)
+		titleMsg = fmt.Sprintf("📑 <b>%s Notes - %d</b>", strings.Title(category), year)
 	} else if len(parts) == 3 {
 		year, _ := strconv.Atoi(parts[1])
 		month, _ := strconv.Atoi(parts[2])
 		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, wib)
 		endDate := startDate.AddDate(0, 1, 0)
 		filter["created_at"] = bson.M{"$gte": startDate, "$lt": endDate}
-		titleMsg = fmt.Sprintf("📑 *%s Notes - %s %d*", strings.Title(category), getMonthName(month), year)
+		titleMsg = fmt.Sprintf("📑 <b>%s Notes - %s %d</b>", strings.Title(category), getMonthName(month), year)
 	} else if len(parts) == 4 {
 		year, _ := strconv.Atoi(parts[1])
 		month, _ := strconv.Atoi(parts[2])
@@ -450,7 +451,7 @@ func executeDumpNotes(c tele.Context, data string) error {
 		startDate := time.Date(year, time.Month(month), day, 0, 0, 0, 0, wib)
 		endDate := startDate.AddDate(0, 0, 1)
 		filter["created_at"] = bson.M{"$gte": startDate, "$lt": endDate}
-		titleMsg = fmt.Sprintf("📑 *%s Notes - %02d %s %d*", strings.Title(category), day, getMonthName(month), year)
+		titleMsg = fmt.Sprintf("📑 <b>%s Notes - %02d %s %d</b>", strings.Title(category), day, getMonthName(month), year)
 	}
 
 	opts := options.Find().SetSort(bson.D{{"created_at", -1}})
@@ -465,14 +466,17 @@ func executeDumpNotes(c tele.Context, data string) error {
 		note := notes[i]
 		timeStr := note.CreatedAt.In(wib).Format("02 Jan 06 15:04 WIB")
 		idx := len(notes) - i
-		noteBlock := fmt.Sprintf("%d. *%s* — %s\n> %s\n\n", idx, note.Title, timeStr, note.Content)
+		
+		safeTitle := html.EscapeString(note.Title)
+		safeContent := html.EscapeString(note.Content)
+		noteBlock := fmt.Sprintf("%d. <b>%s</b> — %s\n&gt; %s\n\n", idx, safeTitle, timeStr, safeContent)
 		if sb.Len()+len(noteBlock) > 3800 {
-			sb.WriteString("_... (truncated)_\n")
+			sb.WriteString("<i>... (truncated)</i>\n")
 			break
 		}
 		sb.WriteString(noteBlock)
 	}
-	return c.Send(sb.String(), tele.ModeMarkdown)
+	return c.Send(sb.String(), tele.ModeHTML)
 }
 
 func handleViewSingleNoteForView(c tele.Context) error {
@@ -501,13 +505,15 @@ func handleViewSingleNoteForView(c tele.Context) error {
 	if note.Type == "idea" { icon = "💡" }
 	if note.Type == "task" { icon = "✅" }
 
-	msg := fmt.Sprintf("%s *%s*\n_%s_\n\n%s", icon, note.Title, timeStr, note.Content)
+	safeTitle := html.EscapeString(note.Title)
+	safeContent := html.EscapeString(note.Content)
+	msg := fmt.Sprintf("%s <b>%s</b>\n<i>%s</i>\n\n%s", icon, safeTitle, timeStr, safeContent)
 	
 	menu := &tele.ReplyMarkup{}
 	btnBack := menu.Data("🔙 Back to List", "vlist", backContext)
 	
 	menu.Inline(menu.Row(btnBack))
-	return c.Edit(msg, menu, tele.ModeMarkdown)
+	return c.Edit(msg, menu, tele.ModeHTML)
 }
 
 
@@ -537,7 +543,9 @@ func handleViewSingleNoteForManage(c tele.Context) error {
 	if note.Type == "idea" { icon = "💡" }
 	if note.Type == "task" { icon = "✅" }
 
-	msg := fmt.Sprintf("%s *%s*\n_%s_\n\n%s", icon, note.Title, timeStr, note.Content)
+	safeTitle := html.EscapeString(note.Title)
+	safeContent := html.EscapeString(note.Content)
+	msg := fmt.Sprintf("%s <b>%s</b>\n<i>%s</i>\n\n%s", icon, safeTitle, timeStr, safeContent)
 	
 	menu := &tele.ReplyMarkup{}
 	btnEdit := menu.Data("✏️ Edit", "act_edit", callbackData)
@@ -545,7 +553,7 @@ func handleViewSingleNoteForManage(c tele.Context) error {
 	btnBack := menu.Data("🔙 Back to List", "mlist", backContext)
 	
 	menu.Inline(menu.Row(btnEdit, btnDel), menu.Row(btnBack))
-	return c.Edit(msg, menu, tele.ModeMarkdown)
+	return c.Edit(msg, menu, tele.ModeHTML)
 }
 
 func handleActionDelete(c tele.Context) error {
