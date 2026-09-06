@@ -185,65 +185,54 @@ func FetchGithubRepoDetails(owner, repoName string) (map[string]interface{}, []M
 		return nil, nil, err
 	}
 
-	type ContentItem struct {
-		Name        string `json:"name"`
-		Type        string `json:"type"`
-		DownloadURL string `json:"download_url"`
-		Path        string `json:"path"`
-	}
-
-	var rootContents []ContentItem
-	var githubContents []ContentItem
-	var githubReadmesContents []ContentItem
-
-	var wg sync.WaitGroup
-	wg.Add(3)
-
-	go func() {
-		defer wg.Done()
-		rootUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents", owner, repoName)
-		body, err := doGithubRequest(rootUrl)
-		if err == nil {
-			json.Unmarshal(body, &rootContents)
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		githubUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/.github", owner, repoName)
-		body, err := doGithubRequest(githubUrl)
-		if err == nil {
-			json.Unmarshal(body, &githubContents)
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		readmesUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/.github/readmes", owner, repoName)
-		body, err := doGithubRequest(readmesUrl)
-		if err == nil {
-			json.Unmarshal(body, &githubReadmesContents)
-		}
-	}()
-
-	wg.Wait()
-
-	allContents := append(rootContents, githubContents...)
-	allContents = append(allContents, githubReadmesContents...)
-
-	var filesToDownload []ContentItem
-	for _, item := range allContents {
-		if item.Type == "file" && item.DownloadURL != "" {
-			lowerName := strings.ToLower(item.Name)
-			if strings.HasSuffix(lowerName, ".md") || strings.HasSuffix(lowerName, ".mdx") || lowerName == "license" || lowerName == "code_of_conduct" {
-				filesToDownload = append(filesToDownload, item)
-			}
-		}
-	}
-
 	defaultBranch := "main"
 	if branch, ok := repoData["default_branch"].(string); ok {
 		defaultBranch = branch
+	}
+
+	treeUrl := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/trees/%s?recursive=1", owner, repoName, defaultBranch)
+	treeBody, err := doGithubRequest(treeUrl)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	type TreeItem struct {
+		Path string `json:"path"`
+		Type string `json:"type"`
+	}
+
+	var treeResponse struct {
+		Tree []TreeItem `json:"tree"`
+	}
+
+	if err := json.Unmarshal(treeBody, &treeResponse); err != nil {
+		return nil, nil, err
+	}
+
+	type ContentItem struct {
+		Name        string
+		Type        string
+		DownloadURL string
+		Path        string
+	}
+
+	var filesToDownload []ContentItem
+	for _, item := range treeResponse.Tree {
+		if item.Type == "blob" {
+			parts := strings.Split(item.Path, "/")
+			name := parts[len(parts)-1]
+			lowerName := strings.ToLower(name)
+			
+			if strings.HasSuffix(lowerName, ".md") || strings.HasSuffix(lowerName, ".mdx") || lowerName == "license" || lowerName == "code_of_conduct" {
+				downloadURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repoName, defaultBranch, item.Path)
+				filesToDownload = append(filesToDownload, ContentItem{
+					Name:        name,
+					Type:        "file",
+					DownloadURL: downloadURL,
+					Path:        item.Path,
+				})
+			}
+		}
 	}
 
 	var downloadedMdFiles []MdFile
