@@ -67,14 +67,7 @@ func InsertGuildHandler(c *fiber.Ctx) error {
 		return err
 	}
 
-	insertedID := InsertGuild(
-		req.Name,
-		req.Description,
-		req.Platforms,
-		req.Category,
-		req.ImageURL,
-		req.Link,
-	)
+	insertedID := InsertGuild(req)
 
 	if insertedID == nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -104,10 +97,12 @@ func UpdateGuildByIDHandler(c *fiber.Ctx) error {
 	updateData := Guild{
 		Name:        req.Name,
 		Description: req.Description,
-		Platforms:   req.Platforms,
+		Platform:    req.Platform,
 		Category:    req.Category,
 		ImageURL:    req.ImageURL,
+		Website:     req.Website,
 		Link:        req.Link,
+		Socials:     req.Socials,
 	}
 
 	updatedGuild, err := UpdateGuildByID(id, updateData)

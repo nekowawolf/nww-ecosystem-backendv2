@@ -10,19 +10,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InsertGuild(name, description, platforms, category, imgURL, linkURL string) interface{} {
-    newGuild := Guild{
-        ID:          primitive.NewObjectID(),
-        Name:        name,
-        Description: description,
-        Platforms:   platforms,
-        Category:    category,
-        ImageURL:    imgURL,
-        Link:        linkURL,
-        CreatedAt:   time.Now(),
-    }
+func InsertGuild(req Guild) interface{} {
+    req.ID = primitive.NewObjectID()
+    req.CreatedAt = time.Now()
 
-    insertedID, err := utils.InsertDocument("guild", newGuild)
+    insertedID, err := utils.InsertDocument("guild", req)
     if err != nil {
         fmt.Println(err)
         return nil
@@ -67,7 +59,7 @@ func GetGuildStats() (map[string]interface{}, error) {
                     bson.M{"$group": bson.M{"_id": "$category", "count": bson.M{"$sum": 1}}},
                 },
                 "platforms": bson.A{
-                    bson.M{"$group": bson.M{"_id": "$platforms", "count": bson.M{"$sum": 1}}},
+                    bson.M{"$group": bson.M{"_id": "$platform", "count": bson.M{"$sum": 1}}},
                 },
             },
         },
@@ -163,10 +155,12 @@ func UpdateGuildByID(id primitive.ObjectID, updateData Guild) (*Guild, error) {
 		"$set": bson.M{
 			"name":        updateData.Name,
 			"description": updateData.Description,
-			"platforms":   updateData.Platforms,
+			"platform":    updateData.Platform,
 			"category":    updateData.Category,
 			"image_url":   updateData.ImageURL,
+			"website":     updateData.Website,
 			"link":        updateData.Link,
+			"socials":     updateData.Socials,
 		},
 	}
 
