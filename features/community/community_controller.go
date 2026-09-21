@@ -67,13 +67,7 @@ func InsertCryptoCommunityHandler(c *fiber.Ctx) error {
 		return err
 	}
 
-	insertedID := InsertCryptoCommunity(
-		req.Name,
-		req.Platforms,
-		req.Category,
-		req.ImageURL,
-		req.Link,
-	)
+	insertedID := InsertCryptoCommunity(req)
 
 	if insertedID == nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -83,7 +77,7 @@ func InsertCryptoCommunityHandler(c *fiber.Ctx) error {
 
 	invalidateCommunityCache()
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message":   "CryptoCommunity created successfully",
+		"message":    "CryptoCommunity created successfully",
 		"insertedID": insertedID,
 	})
 }
@@ -101,11 +95,14 @@ func UpdateCryptoCommunityByIDHandler(c *fiber.Ctx) error {
 	}
 
 	updateData := CryptoCommunity{
-		Name:      req.Name,
-		Platforms: req.Platforms,
-		Category:  req.Category,
-		ImageURL:  req.ImageURL,
-		Link:      req.Link,
+		Name:        req.Name,
+		Description: req.Description,
+		Platforms:   req.Platforms,
+		Category:    req.Category,
+		ImageURL:    req.ImageURL,
+		Website:     req.Website,
+		Link:        req.Link,
+		Socials:     req.Socials,
 	}
 
 	updatedCommunity, err := UpdateCryptoCommunityByID(id, updateData)
