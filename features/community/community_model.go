@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+type AddedByInfo struct {
+	Name string `bson:"name,omitempty" json:"name,omitempty"`
+	URL  string `bson:"url,omitempty" json:"url,omitempty"`
+}
+
 type Socials struct {
 	Twitter   string `bson:"twitter,omitempty" json:"twitter,omitempty"`
 	Instagram string `bson:"instagram,omitempty" json:"instagram,omitempty"`
@@ -23,5 +28,6 @@ type CryptoCommunity struct {
 	Website     string             `bson:"website,omitempty" json:"website,omitempty"`
 	Link        string             `bson:"link,omitempty" json:"link,omitempty"`
 	Socials     Socials            `bson:"socials,omitempty" json:"socials,omitempty"`
+	AddedBy     *AddedByInfo       `bson:"added_by,omitempty" json:"added_by,omitempty"`
 	CreatedAt   time.Time          `bson:"created_at,omitempty" json:"created_at,omitempty"`
 }

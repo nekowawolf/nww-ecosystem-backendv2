@@ -103,6 +103,7 @@ func UpdateCryptoCommunityByIDHandler(c *fiber.Ctx) error {
 		Website:     req.Website,
 		Link:        req.Link,
 		Socials:     req.Socials,
+		AddedBy:     req.AddedBy,
 	}
 
 	updatedCommunity, err := UpdateCryptoCommunityByID(id, updateData)

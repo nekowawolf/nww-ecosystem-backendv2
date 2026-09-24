@@ -160,6 +160,7 @@ func UpdateCryptoCommunityByID(id primitive.ObjectID, updateData CryptoCommunity
 			"website":   updateData.Website,
 			"link":      updateData.Link,
 			"socials":   updateData.Socials,
+			"added_by":  updateData.AddedBy,
 		},
 	}
 
