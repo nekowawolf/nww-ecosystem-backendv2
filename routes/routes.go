@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"github.com/nekowawolf/airdropv2/middlewares"
 	"github.com/gofiber/fiber/v2"
+	"github.com/nekowawolf/airdropv2/middlewares"
 
 	"github.com/nekowawolf/airdropv2/features/admin"
 	"github.com/nekowawolf/airdropv2/features/ai_tools"
@@ -17,6 +17,7 @@ import (
 	"github.com/nekowawolf/airdropv2/features/media"
 	"github.com/nekowawolf/airdropv2/features/message"
 	"github.com/nekowawolf/airdropv2/features/net"
+	"github.com/nekowawolf/airdropv2/features/net/net_submission"
 	"github.com/nekowawolf/airdropv2/features/notes"
 	"github.com/nekowawolf/airdropv2/features/portfolio"
 	"github.com/nekowawolf/airdropv2/features/price"
@@ -41,7 +42,7 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/portfolio/designs/:id", portfolio.GetDesignByIDHandler)
 	api.Get("/portfolio/certificates", portfolio.GetCertificatesHandler)
 	api.Get("/portfolio/certificates/:id", portfolio.GetCertificateByIDHandler)
-	
+
 	// Public airdrop routes
 	api.Get("/airdrops", airdrop.GetAirdropsPublicHandler)
 	api.Get("/airdrops/stats", airdrop.GetAirdropsStatsHandler)
@@ -78,7 +79,7 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/githubrepo/:id/commits", github.GetGithubRepoCommitsHandler)
 	api.Get("/githubrepo/commits/:owner/:repoName", github.GetGithubRepoCommitsByOwnerRepoHandler)
 
-	// Public price routes	
+	// Public price routes
 	api.Get("/price", price.PriceHandler)
 
 	// Public link routes
@@ -91,6 +92,9 @@ func SetupRoutes(app *fiber.App) {
 
 	// Public community submission routes
 	api.Post("/community-submissions", community_submission.SubmitCommunityHandler)
+
+	// Public net submission routes
+	api.Post("/net-submissions", net_submission.SubmitNetHandler)
 
 	// Public support request routes
 	api.Post("/support-requests", support_request.SubmitSupportRequestHandler)
@@ -153,7 +157,7 @@ func SetupRoutes(app *fiber.App) {
 	// Protected portfolio routes
 	protected.Put("/portfolio", portfolio.UpdatePortfolioHandler)
 	protected.Put("/portfolio/hero", portfolio.UpdateHeroProfileHandler)
-	
+
 	protected.Post("/portfolio/projects", portfolio.InsertProjectHandler)
 	protected.Put("/portfolio/projects/:id", portfolio.UpdateProjectHandler)
 	protected.Delete("/portfolio/projects/:id", portfolio.DeleteProjectHandler)
@@ -206,6 +210,10 @@ func SetupRoutes(app *fiber.App) {
 	// Protected community submission routes
 	protected.Get("/community-submissions", community_submission.GetAllCommunitySubmissionsHandler)
 	protected.Delete("/community-submissions/:id", community_submission.DeleteCommunitySubmissionHandler)
+
+	// Protected net submission routes
+	protected.Get("/net-submissions", net_submission.GetAllNetSubmissionsHandler)
+	protected.Delete("/net-submissions/:id", net_submission.DeleteNetSubmissionHandler)
 
 	// Protected support request routes
 	protected.Get("/support-requests", support_request.GetAllSupportRequestsHandler)

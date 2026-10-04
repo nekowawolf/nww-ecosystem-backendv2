@@ -1,8 +1,9 @@
 package net
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type NetMedia struct {
@@ -18,6 +19,11 @@ type NetSocials struct {
 	Youtube   string `bson:"youtube,omitempty" json:"youtube,omitempty"`
 }
 
+type AddedByInfo struct {
+	Name string `bson:"name,omitempty" json:"name,omitempty"`
+	URL  string `bson:"url,omitempty" json:"url,omitempty"`
+}
+
 type Net struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
 	Name        string             `bson:"name,omitempty" json:"name,omitempty"`
@@ -27,5 +33,6 @@ type Net struct {
 	Categories  []string           `bson:"categories,omitempty" json:"categories,omitempty"`
 	Media       NetMedia           `bson:"media,omitempty" json:"media,omitempty"`
 	Socials     NetSocials         `bson:"socials,omitempty" json:"socials,omitempty"`
+	AddedBy     *AddedByInfo       `bson:"added_by,omitempty" json:"added_by,omitempty"`
 	CreatedAt   time.Time          `bson:"created_at,omitempty" json:"created_at,omitempty"`
 }

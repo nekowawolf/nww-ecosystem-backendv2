@@ -75,6 +75,7 @@ func InsertNetHandler(c *fiber.Ctx) error {
 		req.Categories,
 		req.Media,
 		req.Socials,
+		req.AddedBy,
 	)
 
 	if insertedID == nil {
@@ -103,13 +104,14 @@ func UpdateNetByIDHandler(c *fiber.Ctx) error {
 	}
 
 	updateData := Net{
-		Name:           req.Name,
-		Description:    req.Description,
-		ImageURL:       req.ImageURL,
-		Website:        req.Website,
-		Categories:     req.Categories,
-		Media:          req.Media,
-		Socials:        req.Socials,
+		Name:        req.Name,
+		Description: req.Description,
+		ImageURL:    req.ImageURL,
+		Website:     req.Website,
+		Categories:  req.Categories,
+		Media:       req.Media,
+		Socials:     req.Socials,
+		AddedBy:     req.AddedBy,
 	}
 
 	updatedNet, err := UpdateNetByID(id, updateData)
