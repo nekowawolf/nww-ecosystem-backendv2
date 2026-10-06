@@ -77,6 +77,7 @@ func InsertCreatorsHandler(c *fiber.Ctx) error {
 		req.OpenToWork,
 		req.Socials,
 		req.Platforms,
+		req.AddedBy,
 	)
 
 	if insertedID == nil {
@@ -114,6 +115,7 @@ func UpdateCreatorsByIDHandler(c *fiber.Ctx) error {
 		OpenToWork:    req.OpenToWork,
 		Socials:       req.Socials,
 		Platforms:     req.Platforms,
+		AddedBy:       req.AddedBy,
 	}
 
 	updatedCreator, err := UpdateCreatorsByID(id, updateData)

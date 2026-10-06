@@ -10,6 +10,7 @@ import (
 	"github.com/nekowawolf/airdropv2/features/community"
 	"github.com/nekowawolf/airdropv2/features/community/community_submission"
 	"github.com/nekowawolf/airdropv2/features/creators"
+	"github.com/nekowawolf/airdropv2/features/creators/creator_submission"
 	"github.com/nekowawolf/airdropv2/features/github"
 	"github.com/nekowawolf/airdropv2/features/github/repo_submission"
 	"github.com/nekowawolf/airdropv2/features/guild"
@@ -99,6 +100,9 @@ func SetupRoutes(app *fiber.App) {
 
 	// Public guild submission routes
 	api.Post("/guild-submissions", guild_submission.SubmitGuildHandler)
+
+	// Public creator submission routes
+	api.Post("/creator-submissions", creator_submission.SubmitCreatorHandler)
 
 	// Public support request routes
 	api.Post("/support-requests", support_request.SubmitSupportRequestHandler)
@@ -222,6 +226,10 @@ func SetupRoutes(app *fiber.App) {
 	// Protected guild submission routes
 	protected.Get("/guild-submissions", guild_submission.GetAllGuildSubmissionsHandler)
 	protected.Delete("/guild-submissions/:id", guild_submission.DeleteGuildSubmissionHandler)
+
+	// Protected creator submission routes
+	protected.Get("/creator-submissions", creator_submission.GetAllCreatorSubmissionsHandler)
+	protected.Delete("/creator-submissions/:id", creator_submission.DeleteCreatorSubmissionHandler)
 
 	// Protected support request routes
 	protected.Get("/support-requests", support_request.GetAllSupportRequestsHandler)

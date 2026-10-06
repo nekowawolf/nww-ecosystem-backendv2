@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InsertCreators(name, description string, imageURL string, website string, category, language string, openToWork bool, socials CreatorsSocials, platforms CreatorsPlatforms) interface{} {
+func InsertCreators(name, description string, imageURL string, website string, category, language string, openToWork bool, socials CreatorsSocials, platforms CreatorsPlatforms, addedBy *AddedByInfo) interface{} {
     newCreator := Creators{
         ID:          primitive.NewObjectID(),
         Name:        name,
@@ -22,6 +22,7 @@ func InsertCreators(name, description string, imageURL string, website string, c
         OpenToWork:  openToWork,
         Socials:     socials,
         Platforms:   platforms,
+        AddedBy:     addedBy,
         CreatedAt:   time.Now(),
     }
 
@@ -143,19 +144,22 @@ func UpdateCreatorsByID(id primitive.ObjectID, updateData Creators) (*Creators, 
 
 	collection := config.Database.Collection("creators")
 
-	update := bson.M{
-		"$set": bson.M{
-			"name":          updateData.Name,
-			"description":   updateData.Description,
-			"image_url":     updateData.ImageURL,
-			"website":       updateData.Website,
-			"category":      updateData.Category,
-			"language":      updateData.Language,
-			"open_to_work":  updateData.OpenToWork,
-			"socials":       updateData.Socials,
-			"platforms":     updateData.Platforms,
-		},
+	setData := bson.M{
+		"name":          updateData.Name,
+		"description":   updateData.Description,
+		"image_url":     updateData.ImageURL,
+		"website":       updateData.Website,
+		"category":      updateData.Category,
+		"language":      updateData.Language,
+		"open_to_work":  updateData.OpenToWork,
+		"socials":       updateData.Socials,
+		"platforms":     updateData.Platforms,
 	}
+	if updateData.AddedBy != nil {
+		setData["added_by"] = updateData.AddedBy
+	}
+
+	update := bson.M{"$set": setData}
 
 	_, err := collection.UpdateOne(ctx, bson.M{"_id": id}, update)
 	if err != nil {

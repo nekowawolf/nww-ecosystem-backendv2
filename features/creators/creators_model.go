@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+type AddedByInfo struct {
+	Name string `bson:"name,omitempty" json:"name,omitempty"`
+	URL  string `bson:"url,omitempty" json:"url,omitempty"`
+}
+
 type CreatorsSocials struct {
 	Twitter       string `bson:"twitter,omitempty" json:"twitter,omitempty"`
 	Instagram     string `bson:"instagram,omitempty" json:"instagram,omitempty"`
@@ -33,5 +38,6 @@ type Creators struct {
 	OpenToWork  bool               `bson:"open_to_work,omitempty" json:"open_to_work,omitempty"`
 	Socials     CreatorsSocials    `bson:"socials,omitempty" json:"socials,omitempty"`
 	Platforms   CreatorsPlatforms  `bson:"platforms,omitempty" json:"platforms,omitempty"`
+	AddedBy     *AddedByInfo       `bson:"added_by,omitempty" json:"added_by,omitempty"`
 	CreatedAt   time.Time          `bson:"created_at,omitempty" json:"created_at,omitempty"`
 }
