@@ -75,6 +75,7 @@ func InsertAIToolsHandler(c *fiber.Ctx) error {
 		req.Categories,
 		req.Media,
 		req.Socials,
+		req.AddedBy,
 	)
 
 	if insertedID == nil {
@@ -110,6 +111,7 @@ func UpdateAIToolsByIDHandler(c *fiber.Ctx) error {
 		Categories:  req.Categories,
 		Media:       req.Media,
 		Socials:     req.Socials,
+		AddedBy:     req.AddedBy,
 	}
 
 	updatedTool, err := UpdateAIToolsByID(id, updateData)

@@ -1,9 +1,15 @@
 package ai_tools
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+type AddedByInfo struct {
+	Name string `bson:"name,omitempty" json:"name,omitempty"`
+	URL  string `bson:"url,omitempty" json:"url,omitempty"`
+}
 
 type AIToolsMedia struct {
 	VideoURL       string   `bson:"video_url,omitempty" json:"video_url,omitempty"`
@@ -26,5 +32,6 @@ type AITools struct {
 	Categories  []string           `bson:"categories,omitempty" json:"categories,omitempty"`
 	Media       AIToolsMedia       `bson:"media,omitempty" json:"media,omitempty"`
 	Socials     AIToolsSocials     `bson:"socials,omitempty" json:"socials,omitempty"`
+	AddedBy     *AddedByInfo       `bson:"added_by,omitempty" json:"added_by,omitempty"`
 	CreatedAt   time.Time          `bson:"created_at,omitempty" json:"created_at,omitempty"`
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/nekowawolf/airdropv2/features/admin"
 	"github.com/nekowawolf/airdropv2/features/ai_tools"
+	"github.com/nekowawolf/airdropv2/features/ai_tools/ai_tool_submission"
 	"github.com/nekowawolf/airdropv2/features/airdrop"
 	"github.com/nekowawolf/airdropv2/features/community"
 	"github.com/nekowawolf/airdropv2/features/community/community_submission"
@@ -103,6 +104,9 @@ func SetupRoutes(app *fiber.App) {
 
 	// Public creator submission routes
 	api.Post("/creator-submissions", creator_submission.SubmitCreatorHandler)
+
+	// Public AI Tool submission routes
+	api.Post("/ai-tool-submissions", ai_tool_submission.SubmitAIToolHandler)
 
 	// Public support request routes
 	api.Post("/support-requests", support_request.SubmitSupportRequestHandler)
@@ -230,6 +234,10 @@ func SetupRoutes(app *fiber.App) {
 	// Protected creator submission routes
 	protected.Get("/creator-submissions", creator_submission.GetAllCreatorSubmissionsHandler)
 	protected.Delete("/creator-submissions/:id", creator_submission.DeleteCreatorSubmissionHandler)
+
+	// Protected AI Tool submission routes
+	protected.Get("/ai-tool-submissions", ai_tool_submission.GetAllAIToolSubmissionsHandler)
+	protected.Delete("/ai-tool-submissions/:id", ai_tool_submission.DeleteAIToolSubmissionHandler)
 
 	// Protected support request routes
 	protected.Get("/support-requests", support_request.GetAllSupportRequestsHandler)
