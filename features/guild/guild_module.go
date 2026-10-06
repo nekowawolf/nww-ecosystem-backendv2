@@ -151,18 +151,21 @@ func UpdateGuildByID(id primitive.ObjectID, updateData Guild) (*Guild, error) {
 
 	collection := config.Database.Collection("guild")
 
-	update := bson.M{
-		"$set": bson.M{
-			"name":        updateData.Name,
-			"description": updateData.Description,
-			"platform":    updateData.Platform,
-			"category":    updateData.Category,
-			"image_url":   updateData.ImageURL,
-			"website":     updateData.Website,
-			"link":        updateData.Link,
-			"socials":     updateData.Socials,
-		},
+	setData := bson.M{
+		"name":        updateData.Name,
+		"description": updateData.Description,
+		"platform":    updateData.Platform,
+		"category":    updateData.Category,
+		"image_url":   updateData.ImageURL,
+		"website":     updateData.Website,
+		"link":        updateData.Link,
+		"socials":     updateData.Socials,
 	}
+	if updateData.AddedBy != nil {
+		setData["added_by"] = updateData.AddedBy
+	}
+
+	update := bson.M{"$set": setData}
 
 	_, err := collection.UpdateOne(ctx, bson.M{"_id": id}, update)
 	if err != nil {

@@ -103,6 +103,7 @@ func UpdateGuildByIDHandler(c *fiber.Ctx) error {
 		Website:     req.Website,
 		Link:        req.Link,
 		Socials:     req.Socials,
+		AddedBy:     req.AddedBy,
 	}
 
 	updatedGuild, err := UpdateGuildByID(id, updateData)
