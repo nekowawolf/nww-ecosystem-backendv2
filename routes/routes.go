@@ -28,6 +28,7 @@ import (
 	"github.com/nekowawolf/airdropv2/features/support/support_request"
 	"github.com/nekowawolf/airdropv2/features/support/supporter"
 	"github.com/nekowawolf/airdropv2/features/web3_tools"
+	"github.com/nekowawolf/airdropv2/features/web3_tools/web3_tools_submission"
 )
 
 func SetupRoutes(app *fiber.App) {
@@ -74,6 +75,7 @@ func SetupRoutes(app *fiber.App) {
 	// Public Web3 Tool routes
 	api.Get("/web3tools", web3_tools.GetAllWeb3ToolsHandler)
 	api.Get("/web3tools/stats", web3_tools.GetWeb3ToolStatsHandler)
+	api.Get("/web3tools/:id", web3_tools.GetWeb3ToolsByIDHandler)
 
 	// Public Github Repo routes
 	api.Get("/githubrepo", github.GetAllGithubReposHandler)
@@ -108,6 +110,9 @@ func SetupRoutes(app *fiber.App) {
 
 	// Public AI Tool submission routes
 	api.Post("/ai-tool-submissions", ai_tool_submission.SubmitAIToolHandler)
+
+	// Public Web3 Tool submission routes
+	api.Post("/web3-tool-submissions", web3_tools_submission.SubmitWeb3ToolsHandler)
 
 	// Public airdrop submission routes
 	api.Post("/airdrop-submissions", airdrop_submission.SubmitAirdropHandler)
@@ -159,7 +164,6 @@ func SetupRoutes(app *fiber.App) {
 	protected.Delete("/creators/:id", creators.DeleteCreatorsByIDHandler)
 
 	// Protected Web3 Tool routes
-	protected.Get("/web3tools/:id", web3_tools.GetWeb3ToolsByIDHandler)
 	protected.Post("/web3tools", web3_tools.InsertWeb3ToolsHandler)
 	protected.Put("/web3tools/:id", web3_tools.UpdateWeb3ToolsByIDHandler)
 	protected.Delete("/web3tools/:id", web3_tools.DeleteWeb3ToolsByIDHandler)
@@ -242,6 +246,10 @@ func SetupRoutes(app *fiber.App) {
 	// Protected AI Tool submission routes
 	protected.Get("/ai-tool-submissions", ai_tool_submission.GetAllAIToolSubmissionsHandler)
 	protected.Delete("/ai-tool-submissions/:id", ai_tool_submission.DeleteAIToolSubmissionHandler)
+
+	// Protected Web3 Tool submission routes
+	protected.Get("/web3-tool-submissions", web3_tools_submission.GetAllWeb3ToolsSubmissionsHandler)
+	protected.Delete("/web3-tool-submissions/:id", web3_tools_submission.DeleteWeb3ToolsSubmissionHandler)
 
 	// Protected airdrop submission routes
 	protected.Get("/airdrop-submissions", airdrop_submission.GetAllAirdropSubmissionsHandler)
