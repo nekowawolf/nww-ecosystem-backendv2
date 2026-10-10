@@ -19,7 +19,6 @@ import (
 	"github.com/nekowawolf/airdropv2/features/guild/guild_submission"
 	"github.com/nekowawolf/airdropv2/features/link"
 	"github.com/nekowawolf/airdropv2/features/media"
-	"github.com/nekowawolf/airdropv2/features/message"
 	"github.com/nekowawolf/airdropv2/features/net"
 	"github.com/nekowawolf/airdropv2/features/net/net_submission"
 	"github.com/nekowawolf/airdropv2/features/notes"
@@ -218,10 +217,6 @@ func SetupRoutes(app *fiber.App) {
 	protected.Post("/notes", notes.InsertNoteHandler)
 	protected.Put("/notes/:id", notes.UpdateNoteByIDHandler)
 	protected.Delete("/notes/:id", notes.DeleteNoteByIDHandler)
-
-	// Protected Message routes
-	protected.Get("/message", message.GetMessageHandler)
-	protected.Put("/message", message.UpdateMessageHandler)
 
 	// Protected repo submission routes
 	protected.Get("/repo-submissions", repo_submission.GetAllRepoSubmissionsHandler)
