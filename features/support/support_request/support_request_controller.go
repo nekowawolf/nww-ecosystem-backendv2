@@ -43,7 +43,6 @@ func SubmitSupportRequestHandler(c *fiber.Ctx) error {
 			"error": "Name is required",
 		})
 	}
-	
 	if req.Platform == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Platform is required",

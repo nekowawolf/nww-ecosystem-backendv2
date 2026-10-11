@@ -17,6 +17,7 @@ func InsertSupportRequest(req *SupportRequestRequest) interface{} {
 		Name:      req.Name,
 		URL:       req.URL,
 		Platform:  req.Platform,
+		Proof:     req.Proof,
 		CreatedAt: time.Now(),
 	}
 

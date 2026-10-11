@@ -50,6 +50,7 @@ func InsertSupporter(supporter *Supporter) interface{} {
 		Name:      supporter.Name,
 		URL:       supporter.URL,
 		Platform:  supporter.Platform,
+		Proof:     supporter.Proof,
 		Amount:    supporter.Amount,
 		CreatedAt: time.Now(),
 	}
@@ -75,6 +76,7 @@ func UpdateSupporterByID(id primitive.ObjectID, req *Supporter) error {
 			"name":     req.Name,
 			"url":      req.URL,
 			"platform": req.Platform,
+			"proof":    req.Proof,
 			"amount":   req.Amount,
 		},
 	}
