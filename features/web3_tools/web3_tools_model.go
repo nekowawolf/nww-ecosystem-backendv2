@@ -20,7 +20,7 @@ type Web3Tools struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
 	Name        string             `bson:"name,omitempty" json:"name,omitempty"`
 	Description string             `bson:"description,omitempty" json:"description,omitempty"`
-	Category    string             `bson:"category,omitempty" json:"category,omitempty"`
+	Categories  []string           `bson:"categories,omitempty" json:"categories,omitempty"`
 	Chains      []string           `bson:"chains,omitempty" json:"chains,omitempty"`
 	ImageURL    string             `bson:"image_url,omitempty" json:"image_url,omitempty"`
 	Website     string             `bson:"website,omitempty" json:"website,omitempty"`

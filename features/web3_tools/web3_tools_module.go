@@ -10,12 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func InsertWeb3Tools(name, description, category string, chains []string, imageURL, website string, media Web3ToolsMedia, addedBy *AddedByInfo, twitter, instagram, discord, telegram, youtube string) interface{} {
+func InsertWeb3Tools(name, description string, categories, chains []string, imageURL, website string, media Web3ToolsMedia, addedBy *AddedByInfo, twitter, instagram, discord, telegram, youtube string) interface{} {
 	newTool := Web3Tools{
 		ID:          primitive.NewObjectID(),
 		Name:        name,
 		Description: description,
-		Category:    category,
+		Categories:  categories,
 		Chains:      chains,
 		ImageURL:    imageURL,
 		Website:     website,
@@ -70,7 +70,8 @@ func GetWeb3ToolStats() (map[string]interface{}, error) {
 					bson.M{"$count": "count"},
 				},
 				"categories": bson.A{
-					bson.M{"$group": bson.M{"_id": "$category", "count": bson.M{"$sum": 1}}},
+					bson.M{"$unwind": "$categories"},
+					bson.M{"$group": bson.M{"_id": "$categories", "count": bson.M{"$sum": 1}}},
 				},
 				"chains": bson.A{
 					bson.M{"$unwind": "$chains"},
@@ -169,7 +170,7 @@ func UpdateWeb3ToolsByID(id primitive.ObjectID, updateData Web3Tools) (*Web3Tool
 	setData := bson.M{
 		"name":        updateData.Name,
 		"description": updateData.Description,
-		"category":    updateData.Category,
+		"categories":  updateData.Categories,
 		"chains":      updateData.Chains,
 		"image_url":   updateData.ImageURL,
 		"website":     updateData.Website,

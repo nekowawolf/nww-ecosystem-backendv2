@@ -70,7 +70,7 @@ func InsertWeb3ToolsHandler(c *fiber.Ctx) error {
 	insertedID := InsertWeb3Tools(
 		req.Name,
 		req.Description,
-		req.Category,
+		req.Categories,
 		req.Chains,
 		req.ImageURL,
 		req.Website,
@@ -111,7 +111,7 @@ func UpdateWeb3ToolsByIDHandler(c *fiber.Ctx) error {
 	updateData := Web3Tools{
 		Name:        req.Name,
 		Description: req.Description,
-		Category:    req.Category,
+		Categories:  req.Categories,
 		Chains:      req.Chains,
 		ImageURL:    req.ImageURL,
 		Website:     req.Website,
