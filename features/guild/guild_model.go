@@ -13,6 +13,7 @@ type AddedByInfo struct {
 type Socials struct {
 	Twitter   string `bson:"twitter,omitempty" json:"twitter,omitempty"`
 	Instagram string `bson:"instagram,omitempty" json:"instagram,omitempty"`
+	Tiktok    string `bson:"tiktok,omitempty" json:"tiktok,omitempty"`
 	Discord   string `bson:"discord,omitempty" json:"discord,omitempty"`
 	Github    string `bson:"github,omitempty" json:"github,omitempty"`
 	Youtube   string `bson:"youtube,omitempty" json:"youtube,omitempty"`
