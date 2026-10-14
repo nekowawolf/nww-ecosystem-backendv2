@@ -7,20 +7,26 @@ import (
 	"github.com/nekowawolf/airdropv2/features/admin"
 	"github.com/nekowawolf/airdropv2/features/ai_tools"
 	"github.com/nekowawolf/airdropv2/features/ai_tools/ai_tool_submission"
+	aiToolsBlog "github.com/nekowawolf/airdropv2/features/ai_tools/blog"
 	"github.com/nekowawolf/airdropv2/features/airdrop"
 	"github.com/nekowawolf/airdropv2/features/airdrop/airdrop_submission"
+	airdropBlog "github.com/nekowawolf/airdropv2/features/airdrop/blog"
 	"github.com/nekowawolf/airdropv2/features/community"
+	cryptoCommunityBlog "github.com/nekowawolf/airdropv2/features/community/blog"
 	"github.com/nekowawolf/airdropv2/features/community/community_submission"
 	"github.com/nekowawolf/airdropv2/features/creators"
+	creatorsBlog "github.com/nekowawolf/airdropv2/features/creators/blog"
 	"github.com/nekowawolf/airdropv2/features/creators/creator_submission"
 	"github.com/nekowawolf/airdropv2/features/github"
 	"github.com/nekowawolf/airdropv2/features/github/blog"
 	"github.com/nekowawolf/airdropv2/features/github/repo_submission"
 	"github.com/nekowawolf/airdropv2/features/guild"
+	guildBlog "github.com/nekowawolf/airdropv2/features/guild/blog"
 	"github.com/nekowawolf/airdropv2/features/guild/guild_submission"
 	"github.com/nekowawolf/airdropv2/features/link"
 	"github.com/nekowawolf/airdropv2/features/media"
 	"github.com/nekowawolf/airdropv2/features/net"
+	netBlog "github.com/nekowawolf/airdropv2/features/net/blog"
 	"github.com/nekowawolf/airdropv2/features/net/net_submission"
 	"github.com/nekowawolf/airdropv2/features/notes"
 	"github.com/nekowawolf/airdropv2/features/portfolio"
@@ -28,6 +34,7 @@ import (
 	"github.com/nekowawolf/airdropv2/features/support/support_request"
 	"github.com/nekowawolf/airdropv2/features/support/supporter"
 	"github.com/nekowawolf/airdropv2/features/web3_tools"
+	web3ToolsBlog "github.com/nekowawolf/airdropv2/features/web3_tools/blog"
 	"github.com/nekowawolf/airdropv2/features/web3_tools/web3_tools_submission"
 )
 
@@ -88,6 +95,34 @@ func SetupRoutes(app *fiber.App) {
 	// Public Github Blog routes
 	api.Get("/githubblog", blog.GetAllGithubBlogsHandler)
 	api.Get("/githubblog/slug/:slug", blog.GetGithubBlogBySlugHandler)
+
+	// Public airdrop blog routes
+	api.Get("/airdropblog", airdropBlog.GetAllAirdropBlogsHandler)
+	api.Get("/airdropblog/slug/:slug", airdropBlog.GetAirdropBlogBySlugHandler)
+
+	// Public crypto community blog routes
+	api.Get("/cryptocommunityblog", cryptoCommunityBlog.GetAllCryptoCommunityBlogsHandler)
+	api.Get("/cryptocommunityblog/slug/:slug", cryptoCommunityBlog.GetCryptoCommunityBlogBySlugHandler)
+
+	// Public Web3 Tools blog routes
+	api.Get("/web3toolsblog", web3ToolsBlog.GetAllWeb3ToolsBlogsHandler)
+	api.Get("/web3toolsblog/slug/:slug", web3ToolsBlog.GetWeb3ToolsBlogBySlugHandler)
+
+	// Public AI Tools blog routes
+	api.Get("/aitoolsblog", aiToolsBlog.GetAllAIToolsBlogsHandler)
+	api.Get("/aitoolsblog/slug/:slug", aiToolsBlog.GetAIToolsBlogBySlugHandler)
+
+	// Public Net blog routes
+	api.Get("/netblog", netBlog.GetAllNetBlogsHandler)
+	api.Get("/netblog/slug/:slug", netBlog.GetNetBlogBySlugHandler)
+
+	// Public Creators blog routes
+	api.Get("/creatorsblog", creatorsBlog.GetAllCreatorsBlogsHandler)
+	api.Get("/creatorsblog/slug/:slug", creatorsBlog.GetCreatorsBlogBySlugHandler)
+
+	// Public Guild blog routes
+	api.Get("/guildblog", guildBlog.GetAllGuildBlogsHandler)
+	api.Get("/guildblog/slug/:slug", guildBlog.GetGuildBlogBySlugHandler)
 
 	// Public price routes
 	api.Get("/price", price.PriceHandler)
@@ -183,6 +218,48 @@ func SetupRoutes(app *fiber.App) {
 	protected.Post("/githubblog", blog.InsertGithubBlogHandler)
 	protected.Put("/githubblog/:id", blog.UpdateGithubBlogByIDHandler)
 	protected.Delete("/githubblog/:id", blog.DeleteGithubBlogByIDHandler)
+
+	// Protected airdrop blog routes
+	protected.Get("/airdropblog/:id", airdropBlog.GetAirdropBlogByIDHandler)
+	protected.Post("/airdropblog", airdropBlog.InsertAirdropBlogHandler)
+	protected.Put("/airdropblog/:id", airdropBlog.UpdateAirdropBlogByIDHandler)
+	protected.Delete("/airdropblog/:id", airdropBlog.DeleteAirdropBlogByIDHandler)
+
+	// Protected crypto community blog routes
+	protected.Get("/cryptocommunityblog/:id", cryptoCommunityBlog.GetCryptoCommunityBlogByIDHandler)
+	protected.Post("/cryptocommunityblog", cryptoCommunityBlog.InsertCryptoCommunityBlogHandler)
+	protected.Put("/cryptocommunityblog/:id", cryptoCommunityBlog.UpdateCryptoCommunityBlogByIDHandler)
+	protected.Delete("/cryptocommunityblog/:id", cryptoCommunityBlog.DeleteCryptoCommunityBlogByIDHandler)
+
+	// Protected Web3 Tools blog routes
+	protected.Get("/web3toolsblog/:id", web3ToolsBlog.GetWeb3ToolsBlogByIDHandler)
+	protected.Post("/web3toolsblog", web3ToolsBlog.InsertWeb3ToolsBlogHandler)
+	protected.Put("/web3toolsblog/:id", web3ToolsBlog.UpdateWeb3ToolsBlogByIDHandler)
+	protected.Delete("/web3toolsblog/:id", web3ToolsBlog.DeleteWeb3ToolsBlogByIDHandler)
+
+	// Protected AI Tools blog routes
+	protected.Get("/aitoolsblog/:id", aiToolsBlog.GetAIToolsBlogByIDHandler)
+	protected.Post("/aitoolsblog", aiToolsBlog.InsertAIToolsBlogHandler)
+	protected.Put("/aitoolsblog/:id", aiToolsBlog.UpdateAIToolsBlogByIDHandler)
+	protected.Delete("/aitoolsblog/:id", aiToolsBlog.DeleteAIToolsBlogByIDHandler)
+
+	// Protected Net blog routes
+	protected.Get("/netblog/:id", netBlog.GetNetBlogByIDHandler)
+	protected.Post("/netblog", netBlog.InsertNetBlogHandler)
+	protected.Put("/netblog/:id", netBlog.UpdateNetBlogByIDHandler)
+	protected.Delete("/netblog/:id", netBlog.DeleteNetBlogByIDHandler)
+
+	// Protected Creators blog routes
+	protected.Get("/creatorsblog/:id", creatorsBlog.GetCreatorsBlogByIDHandler)
+	protected.Post("/creatorsblog", creatorsBlog.InsertCreatorsBlogHandler)
+	protected.Put("/creatorsblog/:id", creatorsBlog.UpdateCreatorsBlogByIDHandler)
+	protected.Delete("/creatorsblog/:id", creatorsBlog.DeleteCreatorsBlogByIDHandler)
+
+	// Protected Guild blog routes
+	protected.Get("/guildblog/:id", guildBlog.GetGuildBlogByIDHandler)
+	protected.Post("/guildblog", guildBlog.InsertGuildBlogHandler)
+	protected.Put("/guildblog/:id", guildBlog.UpdateGuildBlogByIDHandler)
+	protected.Delete("/guildblog/:id", guildBlog.DeleteGuildBlogByIDHandler)
 
 	// Protected portfolio routes
 	protected.Put("/portfolio", portfolio.UpdatePortfolioHandler)
