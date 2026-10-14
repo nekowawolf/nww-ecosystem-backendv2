@@ -14,6 +14,7 @@ import (
 	"github.com/nekowawolf/airdropv2/features/creators"
 	"github.com/nekowawolf/airdropv2/features/creators/creator_submission"
 	"github.com/nekowawolf/airdropv2/features/github"
+	"github.com/nekowawolf/airdropv2/features/github/blog"
 	"github.com/nekowawolf/airdropv2/features/github/repo_submission"
 	"github.com/nekowawolf/airdropv2/features/guild"
 	"github.com/nekowawolf/airdropv2/features/guild/guild_submission"
@@ -83,6 +84,10 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/githubrepo/:id/details", github.GetGithubRepoDetailsHandler)
 	api.Get("/githubrepo/:id/commits", github.GetGithubRepoCommitsHandler)
 	api.Get("/githubrepo/commits/:owner/:repoName", github.GetGithubRepoCommitsByOwnerRepoHandler)
+
+	// Public Github Blog routes
+	api.Get("/githubblog", blog.GetAllGithubBlogsHandler)
+	api.Get("/githubblog/slug/:slug", blog.GetGithubBlogBySlugHandler)
 
 	// Public price routes
 	api.Get("/price", price.PriceHandler)
@@ -172,6 +177,12 @@ func SetupRoutes(app *fiber.App) {
 	protected.Post("/githubrepo", github.InsertGithubRepoHandler)
 	protected.Put("/githubrepo/:id", github.UpdateGithubRepoByIDHandler)
 	protected.Delete("/githubrepo/:id", github.DeleteGithubRepoByIDHandler)
+
+	// Protected Github Blog routes
+	protected.Get("/githubblog/:id", blog.GetGithubBlogByIDHandler)
+	protected.Post("/githubblog", blog.InsertGithubBlogHandler)
+	protected.Put("/githubblog/:id", blog.UpdateGithubBlogByIDHandler)
+	protected.Delete("/githubblog/:id", blog.DeleteGithubBlogByIDHandler)
 
 	// Protected portfolio routes
 	protected.Put("/portfolio", portfolio.UpdatePortfolioHandler)
